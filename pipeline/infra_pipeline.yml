@@ -1,70 +1,87 @@
 trigger: none
 
-pool: shahedali-pipeline
+pool:
+  name: shahedali-pipeline  # ✅ ensure this pool exists in Azure DevOps
 
 stages:
+  # ----------------------------
+  # Stage 1: Terraform Setup
+  # ----------------------------
   - stage: terraformInstall
     displayName: Terraform Installation
     jobs:
       - job: TerraformSetup
         displayName: Install and Run Terraform Commands
-        pool: shahedali-pipeline
+        pool:
+          name: shahedali-pipeline
         steps:
+          # ✅ Install Terraform
           - task: JasonBJohnson.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@2
+            displayName: "Install Terraform"
             inputs:
               terraformVersion: 'latest'
 
-          - task: TerraformTask@5
+          # ✅ Terraform Init
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Init'
             inputs:
               provider: 'azurerm'
               command: 'init'
-              workingDirectory: '$(System.DefaultWorkingDirectory)Todo_app_infra/dev/'
-              backendServiceArm: 'shahedali-pipeline'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/Todo_app_infra/dev'
+              backendServiceArm: 'todo-app-infra'  # ✅ use Service Connection name, not pool
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
               backendAzureRmKey: 'shahed.terraform.tfstate'
 
-          - task: TerraformTask@5
+          # ✅ Terraform Validate
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Validate'
             inputs:
               provider: 'azurerm'
               command: 'validate'
-              workingDirectory: '$(System.DefaultWorkingDirectory)Todo_app_infra/dev/'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/Todo_app_infra/dev'
 
-          - task: TerraformTask@5
+          # ✅ Terraform Plan
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Plan'
             inputs:
               provider: 'azurerm'
               command: 'plan'
-              workingDirectory: '$(System.DefaultWorkingDirectory)Todo_app_infra/dev/'
-              environmentServiceNameAzureRM: 'shahedali-pipeline'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/Todo_app_infra/dev'
+              environmentServiceNameAzureRM: 'todo-app-infra'  # ✅ use service connection name
 
+  # ----------------------------
+  # Stage 2: Security Scan
+  # ----------------------------
   - stage: securityTools
     displayName: Security Tool Scanning
+    dependsOn: terraformInstall
     jobs:
-    - job: SecurityScan
-      displayName: Run tfsec (local scan)
-      pool: shahedali-pipeline
-      steps:
-        - powershell: |
-            Write-Host "Running local tfsec scan from custom directory..."
+      - job: SecurityScan
+        displayName: Run tfsec (local scan)
+        pool:
+          name: shahedali-pipeline
+        steps:
+          - powershell: |
+              Write-Host "Running tfsec scan..."
+              $tfsecPath = "D:\software\security_tools\tfsec.exe"
 
-            # Define tfsec path manually (update this to your actual location)
-            $tfsecPath = "D:\software\security_tools\tfsec.exe"
+              if (-not (Test-Path $tfsecPath)) {
+                  Write-Host "⚠️ tfsec not found at path: $tfsecPath"
+                  exit 0
+              }
 
-            if (-not (Test-Path $tfsecPath)) {
-                Write-Host "tfsec not found at path: $tfsecPath"
-                exit 0
-            }
+              & $tfsecPath "$(System.DefaultWorkingDirectory)\Todo_app_infra\dev\" --no-update-check --soft-fail
+            displayName: Run tfsec from local path
 
-            # Run tfsec using full path
-            & $tfsecPath "$(System.DefaultWorkingDirectory)\Todo_app_infra\dev\" --no-update-check --soft-fail
-
-          displayName: Run tfsec from local path
-
-
+  # ----------------------------
+  # Stage 3: Deploy
+  # ----------------------------
   - stage: deployment
-    displayName: Deploy
+    displayName: Terraform Apply
     condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
-    jobs: 
+    dependsOn: securityTools
+    jobs:
       - job: ManualValidation
         displayName: Manual Validation
         pool: server
@@ -72,28 +89,29 @@ stages:
           - task: ManualValidation@1
             inputs:
               notifyUsers: 'shahedali2001@gmail.com'
-              approvers: 'shahedali2001@gmail.com'
-              instructions: 'planas to deploy to deployment. Please approve.'
+              instructions: 'Approve deployment to production.'
 
       - job: TerraformApply
         displayName: Terraform Apply
         dependsOn: ManualValidation
-        pool: shahedali-pipeline
-        steps: 
-          - task: TerraformTask@5
+        pool:
+          name: shahedali-pipeline
+        steps:
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Init'
             inputs:
               provider: 'azurerm'
               command: 'init'
-              workingDirectory: '$(System.DefaultWorkingDirectory)Todo_app_infra/dev/'
-              backendServiceArm: 'shahedali-pipeline'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/Todo_app_infra/dev'
+              backendServiceArm: 'todo-app-infra'
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
               backendAzureRmKey: 'shahed.terraform.tfstate'
 
-          - task: TerraformTask@5
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Apply'
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)Todo_app_infra/dev/'
-              environmentServiceNameAzureRM: 'shahedali-pipeline'
-
+              workingDirectory: '$(System.DefaultWorkingDirectory)/Todo_app_infra/dev'
+              environmentServiceNameAzureRM: 'todo-app-infra'
