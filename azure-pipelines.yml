@@ -1,0 +1,58 @@
+trigger: 
+  branches:
+    include:
+      - main:
+
+parameters:
+  - name: Environment
+    displayName: "Select Environment"
+    type: string
+    default: dev  
+    values:
+      - dev
+      - qa
+      - prod
+
+pool:
+ name: "todo-app-framework"
+
+stages:
+  - stage: Terraform_infra
+    displayName: "Terraform Deploy - ${{ parameter.environment }}"
+    jobs:
+      - job: Terraformjob
+        displayName: Terraform Step"
+        steps:
+          - checkout: self
+          - task: TerraformCLI@1
+            displayName: "Terraform init"
+            inputs:
+              command: 'init'
+              workingDirectory: 'infra'
+              backendType: 'azurerm'
+              backendServiceArm: 'AzureRMConnection'
+              backendAzureRmResourceGroupName: 'shahed-dev-01'
+              backendAzureRmStorageAccountName: 'shahed490'
+              backendAzureRmContainerName: 'shahed'
+              backendAzureRmKey: '${{ parameters.environment }}.terraform.tfstate'
+          # Terraform Plan
+          - task: TerraformCLI@1
+            inputs:
+              command: 'plan'
+              workingDirectory: 'infra'
+              environmentServiceName: 'AzureRMConnection'
+              commandOptions: '-var-file=${{ parameters.environment }}.tfvars'
+
+          # tfsec Scan
+          - script: |
+              echo "🔍 Running tfsec scan..."
+              ./tfsec infra || true
+            displayName: "Security Scan (tfsec)"
+
+          # Terraform Apply
+          - task: TerraformCLI@1
+            inputs:
+              command: 'apply'
+              workingDirectory: 'infra'
+              environmentServiceName: 'AzureRMConnection'
+              commandOptions: '-var-file=${{ parameters.environment }}.tfvars -auto-approve'
