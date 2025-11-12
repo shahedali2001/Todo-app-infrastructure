@@ -29,6 +29,7 @@ stages:
               command: 'init'
               workingDirectory: '$(System.DefaultWorkingDirectory)/Todo_app_infra/dev'
               backendServiceArm: 'todo-app-infra'  # ✅ use Service Connection name, not pool
+              backendAzureRmResourceGroupName: 'shahed-dev-01' 
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
               backendAzureRmKey: 'shahed.terraform.tfstate'
