@@ -32,7 +32,7 @@ stages:
               backendAzureRmResourceGroupName: 'shahed-dev-01'
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
-              backendAzureRmKey: 'shahed.terraform.tfstate'
+              backendAzureRmKey: 'dev.terraform.tfstate'
 
           # ✅ Terraform Validate
           - task: TerraformTaskV4@4
