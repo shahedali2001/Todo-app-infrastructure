@@ -1,7 +1,7 @@
-trigger: none
+trigger: none  # or 'trigger: - main' if you want automatic runs
 
 pool:
-  name: shahedali-pipeline  # ✅ ensure this pool exists in Azure DevOps
+  name: shahedali-pipeline  # ✅ Ensure this pool exists and is authorized
 
 stages:
   # ----------------------------
@@ -28,8 +28,8 @@ stages:
               provider: 'azurerm'
               command: 'init'
               workingDirectory: '$(System.DefaultWorkingDirectory)/Todo_app_infra/dev'
-              backendServiceArm: 'todo-app-infra'  # ✅ use Service Connection name, not pool
-              backendAzureRmResourceGroupName: 'shahed-dev-01' 
+              backendServiceArm: 'todo-app-infra'  # ✅ Azure DevOps Service Connection name
+              backendAzureRmResourceGroupName: 'shahed-dev-01'
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
               backendAzureRmKey: 'shahed.terraform.tfstate'
@@ -49,7 +49,7 @@ stages:
               provider: 'azurerm'
               command: 'plan'
               workingDirectory: '$(System.DefaultWorkingDirectory)/Todo_app_infra/dev'
-              environmentServiceNameAzureRM: 'todo-app-infra'  # ✅ use service connection name
+              environmentServiceNameAzureRM: 'todo-app-infra'
 
   # ----------------------------
   # Stage 2: Security Scan
@@ -73,10 +73,10 @@ stages:
               }
 
               & $tfsecPath "$(System.DefaultWorkingDirectory)\Todo_app_infra\dev\" --no-update-check --soft-fail
-            displayName: Run tfsec from local path
+            displayName: "Run tfsec from local path"
 
   # ----------------------------
-  # Stage 3: Deploy
+  # Stage 3: Deployment
   # ----------------------------
   - stage: deployment
     displayName: Terraform Apply
@@ -105,6 +105,7 @@ stages:
               command: 'init'
               workingDirectory: '$(System.DefaultWorkingDirectory)/Todo_app_infra/dev'
               backendServiceArm: 'todo-app-infra'
+              backendAzureRmResourceGroupName: 'shahed-dev-01'
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
               backendAzureRmKey: 'shahed.terraform.tfstate'
