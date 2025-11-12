@@ -1,13 +1,13 @@
 trigger: 
   branches:
     include:
-      - main:
+      - main
 
 parameters:
   - name: Environment
     displayName: "Select Environment"
     type: string
-    default: dev  
+    default: "dev"  
     values:
       - dev
       - qa
@@ -17,8 +17,8 @@ pool:
  name: "todo-app-framework"
 
 stages:
-  - stage: Terraform_infra
-    displayName: "Terraform Deploy - ${{ parameter.environment }}"
+  - stage: Terraform_Deploy
+    displayName: "Terraform Deploy"
     jobs:
       - job: Terraformjob
         displayName: Terraform Step"
@@ -30,7 +30,7 @@ stages:
               command: 'init'
               workingDirectory: 'infra'
               backendType: 'azurerm'
-              backendServiceArm: 'AzureRMConnection'
+              backendServiceArm: 'todo-app-framework'
               backendAzureRmResourceGroupName: 'shahed-dev-01'
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
@@ -40,7 +40,7 @@ stages:
             inputs:
               command: 'plan'
               workingDirectory: 'infra'
-              environmentServiceName: 'AzureRMConnection'
+              environmentServiceName: 'todo-app-framework'
               commandOptions: '-var-file=${{ parameters.environment }}.tfvars'
 
           # tfsec Scan
@@ -54,5 +54,5 @@ stages:
             inputs:
               command: 'apply'
               workingDirectory: 'infra'
-              environmentServiceName: 'AzureRMConnection'
+              environmentServiceName: 'todo-app-framework'
               commandOptions: '-var-file=${{ parameters.environment }}.tfvars -auto-approve'
