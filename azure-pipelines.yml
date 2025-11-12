@@ -1,7 +1,7 @@
 trigger: none
 
 pool:
-  name: todo-app-framework  # Self-hosted agent pool name
+  name: todo-app-framework  # Self-hosted agent pool
 
 stages:
   - stage: TerraformInit
@@ -17,6 +17,7 @@ stages:
               command: 'init'
               workingDirectory: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/'
               backendServiceArm: 'todo-app-framework'
+              backendAzureRmResourceGroupName: 'shahed-dev-01'  # 👈 ADD THIS
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
               backendAzureRmKey: 'dev.terraform.tfstate'
