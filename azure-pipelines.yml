@@ -1,58 +1,99 @@
-trigger: 
-  branches:
-    include:
-      - main
+trigger: none
 
-parameters:
-  - name: Environment
-    displayName: "Select Environment"
-    type: string
-    default: "dev"  
-    values:
-      - dev
-      - qa
-      - prod
-
-pool:
- name: "todo-app-framework"
+pool: todo-app-framework
 
 stages:
-  - stage: Terraform_Deploy
-    displayName: "Terraform Deploy"
+  - stage: terraformInstall
+    displayName: Terraform Installation
     jobs:
-      - job: Terraformjob
-        displayName: Terraform Step"
+      - job: TerraformSetup
+        displayName: Install and Run Terraform Commands
+        pool: todo-app-framework
         steps:
-          - checkout: self
-          - task: TerraformCLI@1
-            displayName: "Terraform init"
+          - task: JasonBJohnson.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@2
             inputs:
+              terraformVersion: 'latest'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
               command: 'init'
-              workingDirectory: 'infra'
-              backendType: 'azurerm'
+              workingDirectory: '$(System.DefaultWorkingDirectory)Todo-app-infrastructure/dev/'
               backendServiceArm: 'todo-app-framework'
-              backendAzureRmResourceGroupName: 'shahed-dev-01'
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
-              backendAzureRmKey: '${{ parameters.environment }}.terraform.tfstate'
-          # Terraform Plan
-          - task: TerraformCLI@1
+              backendAzureRmKey: 'dev.terraform.tfstate'
+
+          - task: TerraformTask@5
             inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: '$(System.DefaultWorkingDirectory)Todo-app-infrastructure/dev/'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
               command: 'plan'
-              workingDirectory: 'infra'
-              environmentServiceName: 'todo-app-framework'
-              commandOptions: '-var-file=${{ parameters.environment }}.tfvars'
+              workingDirectory: '$(System.DefaultWorkingDirectory)Todo-app-infrastructure/dev/'
+              environmentServiceNameAzureRM: 'todo-app-framework'
 
-          # tfsec Scan
-          - script: |
-              echo "🔍 Running tfsec scan..."
-              ./tfsec infra || true
-            displayName: "Security Scan (tfsec)"
+  # - stage: securityTools
+  #   displayName: Security Tool Scanning
+  #   jobs:
+  #   - job: SecurityScan
+  #     displayName: Run tfsec (local scan)
+  #     pool: shahedali-pipeline
+  #     steps:
+  #       - powershell: |
+  #           Write-Host "Running local tfsec scan from custom directory..."
 
-          # Terraform Apply
-          - task: TerraformCLI@1
+  #           # Define tfsec path manually (update this to your actual location)
+  #           $tfsecPath = "D:\software\security_tools\tfsec.exe"
+
+  #           if (-not (Test-Path $tfsecPath)) {
+  #               Write-Host "tfsec not found at path: $tfsecPath"
+  #               exit 0
+  #           }
+
+  #           # Run tfsec using full path
+  #           & $tfsecPath "$(System.DefaultWorkingDirectory)\Todo_app_infra\dev\" --no-update-check --soft-fail
+
+  #         displayName: Run tfsec from local path
+
+
+  - stage: deployment
+    displayName: Deploy
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+    jobs: 
+      - job: ManualValidation
+        displayName: Manual Validation
+        pool: server
+        steps:
+          - task: ManualValidation@1
             inputs:
+              notifyUsers: 'shahedali2001@gmail.com'
+              approvers: 'shahedali2001@gmail.com'
+              instructions: 'planas to deploy to deployment. Please approve.'
+
+      - job: TerraformApply
+        displayName: Terraform Apply
+        dependsOn: ManualValidation
+        pool: todo-app-framework
+        steps: 
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)Todo-app-infrastructure/dev/'
+              backendServiceArm: 'todo-app-framework'
+              backendAzureRmStorageAccountName: 'shahed490'
+              backendAzureRmContainerName: 'shahed'
+              backendAzureRmKey: 'dev.terraform.tfstate'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
               command: 'apply'
-              workingDirectory: 'infra'
-              environmentServiceName: 'todo-app-framework'
-              commandOptions: '-var-file=${{ parameters.environment }}.tfvars -auto-approve'
+              workingDirectory: '$(System.DefaultWorkingDirectory)Todo-app-infrastructure/dev/'
+              environmentServiceNameAzureRM: 'todo-app-framework'
+
