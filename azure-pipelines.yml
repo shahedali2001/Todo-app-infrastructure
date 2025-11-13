@@ -42,7 +42,7 @@ stages:
       - job: TerraformInit
         displayName: "Initialize Terraform Backend"
         steps:
-          # Ensure Terraform is installed (safe redundancy)
+          # Ensure Terraform is installed (will use same version from previous stage)
           - task: TerraformInstaller@2
             inputs:
               terraformVersion: '1.13.5'
@@ -62,3 +62,4 @@ stages:
               backendAzureRmContainerName: 'shahed'
               backendAzureRmKey: '${{ parameters.Environment }}.terraform.tfstate'
               allowTelemetryCollection: false
+
