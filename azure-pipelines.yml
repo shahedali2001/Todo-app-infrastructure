@@ -33,8 +33,8 @@ stages:
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             backendServiceArm: 'todo-app-infra'
             backendAzureRmResourceGroupName: 'shahed-dev-01'
-            backendAzureRmStorageAccountName: 'shahed490'
-            backendAzureRmContainerName: 'shahed'
+            backendAzureRmStorageAccountName: 'shahedstg779'
+            backendAzureRmContainerName: 'tfscontainer'
             backendAzureRmKey: 'dev.terraform.tfstate'
         
 
