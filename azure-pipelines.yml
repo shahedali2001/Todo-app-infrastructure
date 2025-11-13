@@ -29,18 +29,25 @@ stages:
   - stage: TerraformInit
     displayName: "Terraform Init"
     jobs:
-      - job: TerraformInit
-        steps:
-          - task: TerraformCLI@2
-            inputs:
-              command: 'init'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/dev/'
-              backendType: 'azurerm'
-              backendServiceArm: 'todo-app-infra'
-              backendAzureRmTenantId: '308cf1f9-a8ab-4d6c-8f2d-e645787abd05'
-              backendAzureRmSubscriptionId: '2c6da294-c904-4801-bffd-cd7f0b236e3d'
-              backendAzureRmResourceGroupName: 'shahed-dev-01'
-              backendAzureRmStorageAccountName: 'shahed490'
-              backendAzureRmContainerName: 'shahed'
-              backendAzureRmKey: 'dev.terraform.tfstate'
-              allowTelemetryCollection: false
+    - job: TerraformInit
+      steps:
+        - task: TerraformInstaller@2
+          inputs:
+            terraformVersion: '1.10.5'  # or 'latest'
+
+        - task: TerraformCLI@2
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/${{ parameters.Environment }}/'
+            backendType: 'azurerm'
+            backendServiceArm: 'todo-app-infra'
+            backendAzureRmTenantId: '308cf1f9-a8ab-4d6c-8f2d-e645787abd05'
+            backendAzureRmSubscriptionId: '2c6da294-c904-4801-bffd-cd7f0b236e3d'
+            backendAzureRmResourceGroupName: 'shahed-dev-01'
+            backendAzureRmStorageAccountName: 'shahed490'
+            backendAzureRmContainerName: 'shahed'
+            backendAzureRmKey: '${{ parameters.Environment }}.terraform.tfstate'
+            allowTelemetryCollection: false
+
+
