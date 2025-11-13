@@ -1,9 +1,9 @@
 trigger: 
- branches:
-   include:
-     - feature/101
-   exclude:
-     - main
+  branches:
+    include:
+      - feature/101
+    exclude:
+      - main
 
 pool:
   name: 'todo-app-infra'
@@ -16,38 +16,39 @@ parameters:
       - dev
       - qa
       - prod
+
 stages:
-  - stage: TerraformInsttalation
-    displayName: "terraform Installation"
+  - stage: TerraformInstallation
+    displayName: "Terraform Installation"
     jobs:
       - job: TerraformInstall
         steps:
-        - task: TerraformInstaller@2
-          inputs:
-            terraformVersion: '1.10.5'
+          - task: TerraformInstaller@2
+            inputs:
+              terraformVersion: '1.10.5'
 
   - stage: TerraformInit
     displayName: "Terraform Init"
+    dependsOn: TerraformInstallation
+    condition: succeeded()
     jobs:
-    - job: TerraformInit
-      steps:
-        - task: TerraformInstaller@2
-          inputs:
-            terraformVersion: '1.10.5'  # or 'latest'
+      - job: TerraformInit
+        steps:
+          - task: TerraformInstaller@2
+            inputs:
+              terraformVersion: '1.10.5'
 
-        - task: TerraformCLI@2
-          inputs:
-            provider: 'azurerm'
-            command: 'init'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/${{ parameters.Environment }}/'
-            backendType: 'azurerm'
-            backendServiceArm: 'todo-app-infra'
-            backendAzureRmTenantId: '308cf1f9-a8ab-4d6c-8f2d-e645787abd05'
-            backendAzureRmSubscriptionId: '2c6da294-c904-4801-bffd-cd7f0b236e3d'
-            backendAzureRmResourceGroupName: 'shahed-dev-01'
-            backendAzureRmStorageAccountName: 'shahed490'
-            backendAzureRmContainerName: 'shahed'
-            backendAzureRmKey: '${{ parameters.Environment }}.terraform.tfstate'
-            allowTelemetryCollection: false
-
-
+          - task: TerraformCLI@2
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/${{ parameters.Environment }}/'
+              backendType: 'azurerm'
+              backendServiceArm: 'todo-app-infra'
+              backendAzureRmTenantId: '308cf1f9-a8ab-4d6c-8f2d-e645787abd05'
+              backendAzureRmSubscriptionId: '2c6da294-c904-4801-bffd-cd7f0b236e3d'
+              backendAzureRmResourceGroupName: 'shahed-dev-01'
+              backendAzureRmStorageAccountName: 'shahed490'
+              backendAzureRmContainerName: 'shahed'
+              backendAzureRmKey: '${{ parameters.Environment }}.terraform.tfstate'
+              allowTelemetryCollection: false
