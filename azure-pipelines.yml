@@ -1,4 +1,4 @@
-trigger: 
+trigger:
   branches:
     include:
       - feature/101
@@ -18,28 +18,39 @@ parameters:
       - prod
 
 stages:
+  # ----------------------------
+  # Stage 1: Terraform Installation
+  # ----------------------------
   - stage: TerraformInstallation
     displayName: "Terraform Installation"
     jobs:
       - job: TerraformInstall
+        displayName: "Install Terraform"
         steps:
           - task: TerraformInstaller@2
             inputs:
               terraformVersion: '1.10.5'
 
+  # ----------------------------
+  # Stage 2: Terraform Init
+  # ----------------------------
   - stage: TerraformInit
     displayName: "Terraform Init"
     dependsOn: TerraformInstallation
     condition: succeeded()
     jobs:
       - job: TerraformInit
+        displayName: "Initialize Terraform Backend"
         steps:
+          # Ensure Terraform is installed (safe redundancy)
           - task: TerraformInstaller@2
             inputs:
               terraformVersion: '1.10.5'
 
+          # Run Terraform Init
           - task: TerraformCLI@2
             inputs:
+              terraformPath: 'C:\ADO-Agent\_work\_tool\terraform\1.10.5\x64\terraform.exe'  # Verified path
               provider: 'azurerm'
               command: 'init'
               workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/${{ parameters.Environment }}/'
