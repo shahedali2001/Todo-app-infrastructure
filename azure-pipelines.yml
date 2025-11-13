@@ -26,24 +26,24 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'init'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/$(Environment)'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
               backendServiceArm: 'shahedsvc'
-              backendAzureRmResourceGroupName: 'shahed-$(Environment)-01'
+              backendAzureRmResourceGroupName: 'shahed-dev-01'
               backendAzureRmStorageAccountName: 'shahedstg779'
               backendAzureRmContainerName: 'tfscontainer'
-              backendAzureRmKey: '$(Environment).terraform.tfstate'
+              backendAzureRmKey: 'dev.terraform.tfstate'
 
           - task: TerraformTask@5
             inputs:
               provider: 'azurerm'
               command: 'validate'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/$(Environment)'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
 
           - task: TerraformTask@5
             inputs:
               provider: 'azurerm'
               command: 'plan'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/$(Environment)'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
               environmentServiceNameAzureRM: 'shahedsvc'
 
   - stage: TerraformApply
@@ -53,12 +53,26 @@ stages:
       - job: TerraformApply
         displayName: "Terraform Apply"
         steps:
+          # Init must run here again because it's a fresh agent
           - task: TerraformTask@5
+            displayName: 'Terraform Init Before Apply'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+              backendServiceArm: 'shahedsvc'
+              backendAzureRmResourceGroupName: 'shahed-dev-01'
+              backendAzureRmStorageAccountName: 'shahedstg779'
+              backendAzureRmContainerName: 'tfscontainer'
+              backendAzureRmKey: 'dev.terraform.tfstate'
+              ensureBackend: true
+
+          - task: TerraformTask@5
+            displayName: 'Terraform Apply'
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/$(Environment)'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
               environmentServiceNameAzureRM: 'shahedsvc'
-              allowTelemetryCollection: true
-              ensureBackend: true
               autoApprove: true
+
