@@ -2,9 +2,6 @@ trigger:
   branches:
     include:
       - main
-    
-      
-      
 
 pool:
   name: 'todo-app-infra'
@@ -19,51 +16,49 @@ parameters:
       - prod
 
 stages:
-  # Stage 1: Terraform Init
   - stage: TerraformInit
-    displayName: "Terraform Init,validate,plan"
+    displayName: "Terraform Init, Validate, Plan"
     jobs:
       - job: TerraformInit
         displayName: "Terraform Init"
         steps:
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'init'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            backendServiceArm: 'shahedsvc'
-            backendAzureRmResourceGroupName: 'shahed-dev-01'
-            backendAzureRmStorageAccountName: 'shahedstg779'
-            backendAzureRmContainerName: 'tfscontainer'
-            backendAzureRmKey: 'dev.terraform.tfstate'
-     
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'validate'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'plan'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            environmentServiceNameAzureRM: 'shahedsvc'
-    # Stage 2: Terraform Apply        
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/$(Environment)'
+              backendServiceArm: 'shahedsvc'
+              backendAzureRmResourceGroupName: 'shahed-$(Environment)-01'
+              backendAzureRmStorageAccountName: 'shahedstg779'
+              backendAzureRmContainerName: 'tfscontainer'
+              backendAzureRmKey: '$(Environment).terraform.tfstate'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/$(Environment)'
+
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/$(Environment)'
+              environmentServiceNameAzureRM: 'shahedsvc'
+
   - stage: TerraformApply
-    displayName: "Terraform apply"
+    displayName: "Terraform Apply"
+    dependsOn: TerraformInit
     jobs:
       - job: TerraformApply
-        displayName: "Terraform apply"
+        displayName: "Terraform Apply"
         steps:
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'apply'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            environmentServiceNameAzureRM: 'shahedsvc'
-            allowTelemetryCollection: true
-            ensureBackend: true
-            autoApprove: true
-        
-
-
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/$(Environment)'
+              environmentServiceNameAzureRM: 'shahedsvc'
+              allowTelemetryCollection: true
+              ensureBackend: true
+              autoApprove: true
