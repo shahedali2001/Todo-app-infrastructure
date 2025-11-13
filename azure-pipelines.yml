@@ -34,7 +34,7 @@ stages:
             backendAzureRmResourceGroupName: 'shahed-dev-01'
             backendAzureRmStorageAccountName: 'shahed490'
             backendAzureRmContainerName: 'shahed'
-            backendAzureRmKey: 'dev.terraform.tfsate'
+            backendAzureRmKey: 'dev.terraform.tfstate'
         
 
 
