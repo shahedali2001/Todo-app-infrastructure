@@ -1,6 +1,6 @@
 terraform {
   backend "azurerm" {
-    storage_account_name = "shahedstg779"
+    storage_account_name = "shahedstg881"
     container_name       = "tfscontainer"
     key                  = "dev.terraform.tfstate"
     resource_group_name  = "shahed-dev-01"
