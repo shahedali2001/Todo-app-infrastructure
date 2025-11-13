@@ -31,7 +31,7 @@ stages:
             provider: 'azurerm'
             command: 'init'
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            backendServiceArm: 'todo-app-infra'
+            backendServiceArm: 'shahedsvc'
             backendAzureRmResourceGroupName: 'shahed-dev-01'
             backendAzureRmStorageAccountName: 'shahedstg779'
             backendAzureRmContainerName: 'tfscontainer'
