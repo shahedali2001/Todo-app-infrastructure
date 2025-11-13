@@ -50,7 +50,6 @@ stages:
           # Run Terraform Init
           - task: TerraformCLI@2
             inputs:
-              terraformPath: 'C:\ADO-Agent\_work\_tool\terraform\1.10.5\x64\terraform.exe'  # Verified path
               provider: 'azurerm'
               command: 'init'
               workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/${{ parameters.Environment }}/'
