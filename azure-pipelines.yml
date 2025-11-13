@@ -29,7 +29,7 @@ stages:
           inputs:
             provider: 'azurerm'
             command: 'init'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/dev'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             backendServiceArm: 'todo-app-infra'
             backendAzureRmResourceGroupName: 'shahed-dev-01'
             backendAzureRmStorageAccountName: 'shahed490'
