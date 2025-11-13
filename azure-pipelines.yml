@@ -29,7 +29,7 @@ stages:
         steps:
           - task: TerraformInstaller@2
             inputs:
-              terraformVersion: '1.13.5'
+              terraformVersion: 'latest'
 
   # ----------------------------
   # Stage 2: Terraform Init
@@ -45,7 +45,7 @@ stages:
           # Ensure Terraform is installed (will use same version from previous stage)
           - task: TerraformInstaller@2
             inputs:
-              terraformVersion: '1.13.5'
+              terraformVersion: 'latest'
 
           # Run Terraform Init
           - task: TerraformCLI@2
