@@ -1,64 +1,103 @@
-trigger:
-  branches:
-    include:
-      - feature/101
-    exclude:
-      - main
+# trigger:
+#   branches:
+#     include:
+#       - feature/101
+#     exclude:
+#       - main
 
-pool:
-  name: 'todo-app-infra'
+# pool:
+#   name: 'todo-app-infra'
 
-parameters:
-  - name: Environment
-    type: string
-    default: dev
-    values:
-      - dev
-      - qa
-      - prod
+# parameters:
+#   - name: Environment
+#     type: string
+#     default: dev
+#     values:
+#       - dev
+#       - qa
+#       - prod
 
-stages:
+# stages:
   # ----------------------------
   # Stage 1: Terraform Installation
   # ----------------------------
-  - stage: TerraformInstallation
-    displayName: "Terraform Installation"
-    jobs:
-      - job: TerraformInstall
-        displayName: "Install Terraform"
-        steps:
-          - task: TerraformInstaller@2
-            inputs:
-              terraformVersion: 'latest'
+  # - stage: TerraformInstallation
+  #   displayName: "Terraform Installation"
+  #   jobs:
+  #     - job: TerraformInstall
+  #       displayName: "Install Terraform"
+  #       steps:
+  #         - task: TerraformInstaller@2
+  #           inputs:
+  #             terraformVersion: 'latest'
 
   # ----------------------------
   # Stage 2: Terraform Init
   # ----------------------------
-  - stage: TerraformInit
-    displayName: "Terraform Init"
-    dependsOn: TerraformInstallation
-    condition: succeeded()
-    jobs:
-      - job: TerraformInit
-        displayName: "Initialize Terraform Backend"
-        steps:
-          # Ensure Terraform is installed (will use same version from previous stage)
-          - task: TerraformInstaller@2
-            inputs:
-              terraformVersion: 'latest'
+  # - stage: TerraformInit
+  #   displayName: "Terraform Init"
+  #   dependsOn: TerraformInstallation
+  #   condition: succeeded()
+  #   jobs:
+  #     - job: TerraformInit
+  #       displayName: "Initialize Terraform Backend"
+  #       steps:
+  #         # Ensure Terraform is installed (will use same version from previous stage)
+  #         - task: TerraformInstaller@2
+  #           inputs:
+  #             terraformVersion: 'latest'
 
-          # Run Terraform Init
+  #         # Run Terraform Init
+  #         - task: TerraformCLI@2
+  #           inputs:
+  #             provider: 'azurerm'
+  #             command: 'init'
+  #             workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/${{ parameters.Environment }}/'
+  #             backendType: 'azurerm'
+  #             backendServiceArm: 'todo-app-infra'
+  #             backendAzureRmTenantId: '308cf1f9-a8ab-4d6c-8f2d-e645787abd05'
+  #             backendAzureRmSubscriptionId: '2c6da294-c904-4801-bffd-cd7f0b236e3d'
+  #             backendAzureRmResourceGroupName: 'shahed-dev-01'
+  #             backendAzureRmStorageAccountName: 'shahed490'
+  #             backendAzureRmContainerName: 'shahed'
+  #             backendAzureRmKey: '${{ parameters.Environment }}.terraform.tfstate'
+  #             allowTelemetryCollection: false
+trigger: none
+
+pool: 'todo-app-infra'
+
+stages:
+  - stage: terraformInstall
+    displayName: Terraform Installation
+    jobs:
+      - job: TerraformSetup
+        displayName: Install and Run Terraform Commands
+        pool: 'todo-app-infra'
+        steps:
+          # Install Terraform
+          - task: TerraformInstaller@2
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: '1.13.5'   # or 'latest' if you want
+
+          # Initialize Terraform
           - task: TerraformCLI@2
+            displayName: 'Terraform Init'
             inputs:
               provider: 'azurerm'
               command: 'init'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/${{ parameters.Environment }}/'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/dev/'
               backendType: 'azurerm'
               backendServiceArm: 'todo-app-infra'
-              backendAzureRmTenantId: '308cf1f9-a8ab-4d6c-8f2d-e645787abd05'
-              backendAzureRmSubscriptionId: '2c6da294-c904-4801-bffd-cd7f0b236e3d'
-              backendAzureRmResourceGroupName: 'shahed-dev-01'
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
-              backendAzureRmKey: '${{ parameters.Environment }}.terraform.tfstate'
+              backendAzureRmKey: 'dev.terraform.tfstate'
               allowTelemetryCollection: false
+
+          # Validate Terraform
+          - task: TerraformCLI@2
+            displayName: 'Terraform Validate'
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/dev/'
