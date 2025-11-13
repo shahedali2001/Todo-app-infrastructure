@@ -1,83 +1,42 @@
-trigger: none
+trigger: 
+ branches:
+   include:
+     - feature/101
+   exclude:
+     - main
 
 pool:
-  name: todo-app-framework
+name: tod-app-infra
 
+parameters:
+  - name: Environment
+    values:
+      - dev
+      - qa
+      - prod
 stages:
+  - stage: TerraformInsttalation
+    displayName: "terraform Installation"
+    jobs:
+      - job: TerraformInstall
+        steps:
+        - task: TerraformInstaller@2
+          inputs:
+            terraformVersion: 'latest'
   - stage: TerraformInit
     displayName: "Terraform Init"
     jobs:
       - job: TerraformInit
-        steps:
-          # Correct task reference (Microsoft version)
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@1
-            displayName: "Install Terraform"
-            inputs:
-              terraformVersion: '1.10.5'
-
-          - task: TerraformCLI@1
-            displayName: "Terraform Init"
-            inputs:
-              command: 'init'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/'
-              backendType: 'azurerm'
-              backendServiceArm: 'todo-app-framework'
-              backendAzureRmResourceGroupName: 'shahed-dev-01'
-              backendAzureRmStorageAccountName: 'shahed490'
-              backendAzureRmContainerName: 'shahed'
-              backendAzureRmKey: 'dev.terraform.tfstate'
-
-
-  # 2️⃣ Terraform Validate
-  - stage: TerraformValidate
-    displayName: "Terraform Validate"
-    dependsOn: TerraformInit
-    jobs:
-      - job: TerraformValidate
-        displayName: "Validate Terraform Code"
-        steps:
-          - task: TerraformCLI@1
-            displayName: "Terraform Validate"
-            inputs:
-              command: 'validate'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/'
-
-  # 3️⃣ Terraform Plan
-  - stage: TerraformPlan
-    displayName: "Terraform Plan"
-    dependsOn: TerraformValidate
-    jobs:
-      - job: TerraformPlan
-        displayName: "Terraform Plan"
-        steps:
-          - task: TerraformCLI@1
-            displayName: "Terraform Plan"
-            inputs:
-              command: 'plan'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/'
-              environmentServiceName: 'todo-app-framework'    # 👈 Updated input name (old name deprecated)
-              commandOptions: '-out=tfplan'
-
-          # (Optional) Save tfplan as artifact for next stage
-          - publish: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/tfplan'
-            artifact: terraform-plan
-
-  # 4️⃣ Terraform Apply
-  - stage: TerraformApply
-    displayName: "Terraform Apply"
-    dependsOn: TerraformPlan
-    condition: succeeded()
-    jobs:
-      - job: TerraformApply
-        displayName: "Apply Terraform Plan"
-        steps:
-          - download: current
-            artifact: terraform-plan
-
-          - task: TerraformCLI@1
-            displayName: "Terraform Apply"
-            inputs:
-              command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/'
-              environmentServiceName: 'todo-app-framework'
-              commandOptions: '-auto-approve tfplan'
+      - task: TerraformCLI@2
+        inputs:
+          command: 'init'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/Todo-app-infrastructure/dev/'
+          backendType: 'azurerm'
+          backendServiceArm: 'todo-app-infra'
+          backendAzureRmTenantId: '308cf1f9-a8ab-4d6c-8f2d-e645787abd05'
+          backendAzureRmSubscriptionId: '2c6da294-c904-4801-bffd-cd7f0b236e3d'
+          backendAzureRmResourceGroupName: 'shahed-dev-01'
+          backendAzureRmStorageAccountName: 'shahed490'
+          backendAzureRmContainerName: 'shahed'
+          backendAzureRmKey: 'dev.terraform.tfstate'
+          allowTelemetryCollection: false
