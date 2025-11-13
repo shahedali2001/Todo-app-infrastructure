@@ -15,79 +15,34 @@ parameters:
       - qa
       - prod
 
-stages:
-
-# ------------------------------
-# 1️⃣ Terraform Init, Validate, Plan
-# ------------------------------
-- stage: TerraformInit
-  displayName: "Terraform Init, Validate, Plan"
-  jobs:
-    - job: TerraformInit
-      displayName: "Terraform Init and Plan"
-      steps:
-        # Terraform Init
-        - task: TerraformTask@5
-          displayName: "Terraform Init"
-          inputs:
-            provider: 'azurerm'
-            command: 'init'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            backendServiceArm: 'shahedsvc'
-            backendAzureRmResourceGroupName: 'shahed-dev-01'
-            backendAzureRmStorageAccountName: 'shahedstg881'
-            backendAzureRmContainerName: 'tfscontainer'
-            backendAzureRmKey: '$(Environment).terraform.tfstate'
-
-        # Terraform Validate
-        - task: TerraformTask@5
-          displayName: "Terraform Validate"
-          inputs:
-            provider: 'azurerm'
-            command: 'validate'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-
-        # Terraform Plan
-        - task: TerraformTask@5
-          displayName: "Terraform Plan"
-          inputs:
-            provider: 'azurerm'
-            command: 'plan'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            environmentServiceNameAzureRM: 'shahedsvc'
-
-# ------------------------------
-# 2️⃣ Terraform Apply (includes init)
-# ------------------------------
-- stage: TerraformApply
-  displayName: "Terraform Apply"
-  dependsOn: TerraformInit
-  condition: succeeded()   # Run only if init/plan succeeded
-  jobs:
-    - job: TerraformApply
-      displayName: "Terraform Init + Apply"
-      steps:
-        # Init again before apply (fresh agent)
-        - task: TerraformTask@5
-          displayName: "Terraform Init (Before Apply)"
-          inputs:
-            provider: 'azurerm'
-            command: 'init'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            backendServiceArm: 'shahedsvc'
-            backendAzureRmResourceGroupName: 'shahed-dev-01'
-            backendAzureRmStorageAccountName: 'shahedstg881'
-            backendAzureRmContainerName: 'tfscontainer'
-            backendAzureRmKey: '$(Environment).terraform.tfstate'
-            ensureBackend: true
-
-        # Apply (with auto-approve)
-        - task: TerraformTask@5
-          displayName: "Terraform Apply"
-          inputs:
-            provider: 'azurerm'
-            command: 'apply'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            environmentServiceNameAzureRM: 'shahedsvc'
-            commandOptions: '-auto-approve'
-
+jobs:
+  - job :
+    displayName: Terraform init
+    steps:
+    - task: TerraformTask@5
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/dev/'
+        backendServiceArm: 'shahedsvc'
+        backendAzureRmResourceGroupName: 'shahed-dev-01'
+        backendAzureRmStorageAccountName: 'shahedstg881'
+        backendAzureRmContainerName: 'tfscontainer'
+        backendAzureRmKey: 'dev.terraform.tfstate'
+  - job: 
+    displayName: Terrafrom validate
+    steps:
+    - task: TerraformTask@5
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+  - job: 
+    displayName: Terraform plan
+    steps:
+    - task: TerraformTask@5
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+        environmentServiceNameAzureRM: 'shahedsvc'
