@@ -1,9 +1,10 @@
 trigger:
   branches:
     include:
-      - feature/101
-    exclude:
       - main
+    
+      
+      
 
 pool:
   name: 'todo-app-infra'
