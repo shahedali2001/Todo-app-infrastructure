@@ -49,6 +49,7 @@ stages:
 
           # Run Terraform Init
           - task: TerraformCLI@2
+            displayName: 'Terraform Init'
             inputs:
               provider: 'azurerm'
               command: 'init'
@@ -62,4 +63,5 @@ stages:
               backendAzureRmContainerName: 'shahed'
               backendAzureRmKey: '${{ parameters.Environment }}.terraform.tfstate'
               allowTelemetryCollection: false
+
 
