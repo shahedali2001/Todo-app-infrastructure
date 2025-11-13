@@ -1,41 +1,48 @@
 trigger: none
 
 pool:
-  name: todo-app-framework  # Self-hosted agent pool
+  name: todo-app-framework
 
 stages:
   - stage: TerraformInit
     displayName: "Terraform Init"
     jobs:
       - job: TerraformInit
-        displayName: "Terraform Init"
         steps:
-          - task: TerraformTaskV4@4
+          # Correct task reference (Microsoft version)
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@1
+            displayName: "Install Terraform"
+            inputs:
+              terraformVersion: '1.10.5'
+
+          - task: TerraformCLI@1
             displayName: "Terraform Init"
             inputs:
-              provider: 'azurerm'
               command: 'init'
               workingDirectory: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/'
+              backendType: 'azurerm'
               backendServiceArm: 'todo-app-framework'
-              backendAzureRmResourceGroupName: 'shahed-dev-01'  # 👈 ADD THIS
+              backendAzureRmResourceGroupName: 'shahed-dev-01'
               backendAzureRmStorageAccountName: 'shahed490'
               backendAzureRmContainerName: 'shahed'
               backendAzureRmKey: 'dev.terraform.tfstate'
 
+
+  # 2️⃣ Terraform Validate
   - stage: TerraformValidate
     displayName: "Terraform Validate"
     dependsOn: TerraformInit
     jobs:
       - job: TerraformValidate
-        displayName: "Terraform Validate"
+        displayName: "Validate Terraform Code"
         steps:
-          - task: TerraformTaskV4@4
+          - task: TerraformCLI@1
             displayName: "Terraform Validate"
             inputs:
-              provider: 'azurerm'
               command: 'validate'
               workingDirectory: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/'
 
+  # 3️⃣ Terraform Plan
   - stage: TerraformPlan
     displayName: "Terraform Plan"
     dependsOn: TerraformValidate
@@ -43,27 +50,34 @@ stages:
       - job: TerraformPlan
         displayName: "Terraform Plan"
         steps:
-          - task: TerraformTaskV4@4
+          - task: TerraformCLI@1
             displayName: "Terraform Plan"
             inputs:
-              provider: 'azurerm'
               command: 'plan'
               workingDirectory: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/'
-              environmentServiceNameAzureRM: 'todo-app-framework'
+              environmentServiceName: 'todo-app-framework'    # 👈 Updated input name (old name deprecated)
               commandOptions: '-out=tfplan'
 
+          # (Optional) Save tfplan as artifact for next stage
+          - publish: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/tfplan'
+            artifact: terraform-plan
+
+  # 4️⃣ Terraform Apply
   - stage: TerraformApply
     displayName: "Terraform Apply"
     dependsOn: TerraformPlan
+    condition: succeeded()
     jobs:
       - job: TerraformApply
-        displayName: "Terraform Apply"
+        displayName: "Apply Terraform Plan"
         steps:
-          - task: TerraformTaskV4@4
+          - download: current
+            artifact: terraform-plan
+
+          - task: TerraformCLI@1
             displayName: "Terraform Apply"
             inputs:
-              provider: 'azurerm'
               command: 'apply'
               workingDirectory: '$(System.DefaultWorkingDirectory)/todo-app-framework/dev/'
-              environmentServiceNameAzureRM: 'todo-app-framework'
-              commandOptions: 'tfplan'
+              environmentServiceName: 'todo-app-framework'
+              commandOptions: '-auto-approve tfplan'
