@@ -61,6 +61,9 @@ stages:
             command: 'apply'
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             environmentServiceNameAzureRM: 'shahedsvc'
+            allowTelemetryCollection: true
+            ensureBackend: true
+            autoApprove: true
         
 
 
