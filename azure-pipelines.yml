@@ -41,9 +41,33 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
               environmentServiceNameAzureRM: 'shahedsvc'
 
+  - stage: Scanning_of_Code
+    displayName: "Terraform Scan Code"
+    dependsOn: TerraformInit
+    jobs:
+      - job: scanningCode
+        displayName: "Scanning Code"
+        steps:
+          - task: tfsec@1
+            inputs:
+              version: 'v1.26.0'
+              dir: $(System.DefaultWorkingDirectory)/dev
+
+  - stage: ManualValidation
+    displayName: "Manual Validation"
+    dependsOn: Scanning_of_Code
+    jobs:
+      - job: WaitForApproval
+        displayName: "Manual Validation"
+        steps:
+          - script: |
+              echo "Waiting for manual approval..."
+              read -p "Press Enter to continue"
+              displayName: "Pause for approval"
+
   - stage: TerraformApply
     displayName: "Terraform Apply"
-    dependsOn: TerraformInit
+    dependsOn: ManualValidation
     jobs:
       - job: TerraformApply
         displayName: "Terraform Apply"
