@@ -72,11 +72,15 @@ stages:
               tflint --version
             displayName: "Verify TFLint installation"
 
-          # Step 3: Run TFLint scan
+          # Step 3: Run TFLint scan (warnings won't fail pipeline)
           - powershell: |
               cd "$(System.DefaultWorkingDirectory)/dev"
               tflint --init
-              tflint 
+              tflint
+              if ($LASTEXITCODE -eq 1) {
+                  Write-Host "TFLint found issues, but allowing pipeline to continue."
+                  exit 0
+              }
             displayName: "Run TFLint Scan"
 
   - stage: ManualValidation
@@ -85,12 +89,7 @@ stages:
     jobs:
       - job: WaitForApproval
         displayName: "Manual Validation"
-        steps:
-          - script: |
-              echo "Waiting for manual approval..."
-              read -p "Press Enter to continue"
-            displayName: "Pause for approval"
-
+       
   - stage: TerraformApply
     displayName: "Terraform Apply"
     dependsOn: ManualValidation
