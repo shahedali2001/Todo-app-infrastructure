@@ -41,9 +41,29 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
               environmentServiceNameAzureRM: 'shahedsvc'
 
+  # ================= TFLint Stage =================
+  - stage: TFLintScan
+    displayName: "Terraform Lint Scan"
+    dependsOn: TerraformInit
+    jobs:
+      - job: TFLintJob
+        displayName: "Run TFLint on Terraform Code"
+        steps:
+          # Install TFLint if not pre-installed
+          - script: |
+              curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+            displayName: "Install TFLint"
+
+          # Run TFLint
+          - script: |
+              cd $(System.DefaultWorkingDirectory)/dev
+              tflint --init
+              tflint --strict
+            displayName: "Run TFLint Scan"
+
   - stage: Scanning_of_Code
     displayName: "Terraform Scan Code"
-    dependsOn: TerraformInit
+    dependsOn: TFLintScan
     jobs:
       - job: scanningCode
         displayName: "Scanning Code"
@@ -63,7 +83,7 @@ stages:
           - script: |
               echo "Waiting for manual approval..."
               read -p "Press Enter to continue"
-              displayName: "Pause for approval"
+            displayName: "Pause for approval"
 
   - stage: TerraformApply
     displayName: "Terraform Apply"
