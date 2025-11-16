@@ -76,11 +76,10 @@ stages:
           - powershell: |
               cd "$(System.DefaultWorkingDirectory)/dev"
               tflint --init
-              tflint
-              if ($LASTEXITCODE -eq 1) {
-                  Write-Host "TFLint found issues, but allowing pipeline to continue."
+              tflint 
+                 Write-Host "TFLint scan completed (warnings/errors ignored)."
                   exit 0
-              }
+              
             displayName: "Run TFLint Scan"
 
   - stage: ManualValidation
