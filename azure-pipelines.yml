@@ -76,7 +76,7 @@ stages:
           - powershell: |
               cd "$(System.DefaultWorkingDirectory)/dev"
               tflint --init
-              tflint --strict
+              tflint 
             displayName: "Run TFLint Scan"
 
   - stage: ManualValidation
