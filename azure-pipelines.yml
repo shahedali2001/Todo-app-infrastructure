@@ -2,6 +2,14 @@ trigger:
   branches:
     include:
       - main
+parameters:
+  - name: Environmnet
+    type: string
+    default: dev
+    values:
+      - dev
+      - qa
+      - prod
 
 pool:
   name: 'todo-app-infra'
@@ -41,37 +49,31 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
               environmentServiceNameAzureRM: 'shahedsvc'
 
-  # ================= TFLint Stage =================
-  - stage: TFLintScan
-    displayName: "Terraform Lint Scan"
-    dependsOn: TerraformInit
-    jobs:
-      - job: TFLintJob
-        displayName: "Run TFLint on Terraform Code"
-        steps:
-          # Install TFLint if not pre-installed
-          - script: |
-              curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-            displayName: "Install TFLint"
-
-          # Run TFLint
-          - script: |
-              cd $(System.DefaultWorkingDirectory)/dev
-              tflint --init
-              tflint --strict
-            displayName: "Run TFLint Scan"
-
   - stage: Scanning_of_Code
     displayName: "Terraform Scan Code"
-    dependsOn: TFLintScan
+    dependsOn: TerraformInit
     jobs:
       - job: scanningCode
         displayName: "Scanning Code"
         steps:
-          - task: tfsec@1
-            inputs:
-              version: 'v1.26.0'
-              dir: $(System.DefaultWorkingDirectory)/dev
+          # Step 1: Download and extract TFLint for Windows
+          - powershell: |
+              Invoke-WebRequest -Uri "https://github.com/terraform-linters/tflint/releases/download/v0.64.1/tflint_windows_amd64.zip" -OutFile "tflint.zip"
+              Expand-Archive tflint.zip -DestinationPath "$(Agent.ToolsDirectory)\tflint"
+            displayName: "Download and extract TFLint"
+
+          # Step 2: Add TFLint to PATH
+          - powershell: |
+              $env:PATH = "$(Agent.ToolsDirectory)\tflint;$env:PATH"
+              tflint --version
+            displayName: "Verify TFLint installation"
+
+          # Step 3: Run TFLint scan
+          - powershell: |
+              cd "$(System.DefaultWorkingDirectory)\dev"
+              tflint --init
+              tflint --strict
+            displayName: "Run TFLint Scan"
 
   - stage: ManualValidation
     displayName: "Manual Validation"
