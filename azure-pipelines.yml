@@ -2,8 +2,9 @@ trigger:
   branches:
     include:
       - main
+
 parameters:
-  - name: Environmnet
+  - name: Environment
     type: string
     default: dev
     values:
@@ -56,10 +57,13 @@ stages:
       - job: scanningCode
         displayName: "Scanning Code"
         steps:
-          # Step 1: Download and extract TFLint for Windows
+          # Step 1: Download latest TFLint for Windows dynamically
           - powershell: |
-              Invoke-WebRequest -Uri "https://github.com/terraform-linters/tflint/releases/download/v0.64.1/tflint_windows_amd64.zip" -OutFile "tflint.zip"
-              Expand-Archive tflint.zip -DestinationPath "$(Agent.ToolsDirectory)\tflint"
+              $tflintRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/terraform-linters/tflint/releases/latest"
+              $url = $tflintRelease.assets | Where-Object { $_.name -like "*windows_amd64.zip" } | Select-Object -ExpandProperty browser_download_url
+              Write-Host "Downloading TFLint from $url"
+              Invoke-WebRequest -Uri $url -OutFile "tflint.zip"
+              Expand-Archive tflint.zip -DestinationPath "$(Agent.ToolsDirectory)\tflint" -Force
             displayName: "Download and extract TFLint"
 
           # Step 2: Add TFLint to PATH
@@ -70,7 +74,7 @@ stages:
 
           # Step 3: Run TFLint scan
           - powershell: |
-              cd "$(System.DefaultWorkingDirectory)\dev"
+              cd "$(System.DefaultWorkingDirectory)/dev"
               tflint --init
               tflint --strict
             displayName: "Run TFLint Scan"
