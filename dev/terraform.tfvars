@@ -247,7 +247,7 @@ vms = {
       version   = "latest"
     }
   }
-  custom_data_file = "scripts/init-script.sh"
+  custom_data_file = "scripts/install-nginx.sh"
 }
 
 key_vaults = {
