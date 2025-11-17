@@ -55,10 +55,10 @@ vnets = {
     dns_servers         = ["10.1.1.4"]
 
     # Required AzureRM defaults
-    flow_timeout_in_minutes        = 4          # minimum allowed
-    private_endpoint_vnet_policies = "Disabled" # must be "Basic" or "Disabled"
-    edge_zone                      = null       # optional
-    bgp_community                  = null       # optional
+    flow_timeout_in_minutes        = 4
+    private_endpoint_vnet_policies = "Disabled"
+    edge_zone                      = null
+    bgp_community                  = null
     tags                           = { environment = "dev" }
 
     # Optional nested blocks
@@ -75,10 +75,20 @@ vnets = {
       {
         name             = "backend-01-subnet"
         address_prefixes = ["10.2.2.0/24"]
+      },
+      {
+        name             = "AzureBastionSubnet"
+        address_prefixes = ["10.2.3.0/26"]  # Make sure it doesn't overlap
+      },
+      {
+        name             = "appgw-subnet"
+        address_prefixes = ["10.2.4.0/24"] # AGW subnet
       }
     ]
   }
 }
+
+
 nsgs = {
   "frontend-nsg" = {
     name                = "frontend-nsg"
@@ -170,9 +180,30 @@ pips = {
       app = "lb"
       env = "dev"
     }
+  },
+    # Public IP for Bastion host (key matches bastion_hosts)
+  dev_bastion = {
+    name                = "bastion-dev-pip"
+    resource_group_name = "shahed-dev-01"
+    location            = "centralindia"
+    allocation_method   = "Static"
+    tags = {
+      app = "bastion"
+      env = "dev"
+    }
+  },
+  agw_dev = {
+    name                = "agw-dev-pip"
+    resource_group_name = "shahed-dev-01"
+    location            = "centralindia"
+    allocation_method   = "Static"
+    tags = {
+      app = "appgw"
+      env = "dev"
+    }
   }
 }
-
+ 
 vms = {
   vm1 = {
     nic_name             = "shahed-frontend-nic"
@@ -193,6 +224,7 @@ vms = {
       sku       = "22_04-lts"
       version   = "latest"
     }
+    custom_data_file = "scripts/install-nginx.sh"
   }
 
   vm2 = {
@@ -215,6 +247,7 @@ vms = {
       version   = "latest"
     }
   }
+  custom_data_file = "scripts/init-script.sh"
 }
 
 key_vaults = {
@@ -377,4 +410,55 @@ shahed_lb_nics = {
   #   ip_configuration_name = "internal"
   #   backend_pool_key      = "lb1"
   # }
+}
+bastion_hosts = {
+  dev_bastion = {
+    name                = "bastion-dev"
+    location            = "Central India"
+    resource_group_name = "shahed-dev-01"
+
+    ip_configuration = {
+      name                 = "bastion-ip-config-dev"
+      subnet_id            = "/subscriptions/xxxx/resourceGroups/shahed-dev-01/providers/Microsoft.Network/virtualNetworks/shahed-vnet/subnets/AzureBastionSubnet"
+      public_ip_address_id = "/subscriptions/xxxx/resourceGroups/shahed-dev-01/providers/Microsoft.Network/publicIPAddresses/bastion-dev-pip"
+    }
+
+    copy_paste_enabled        = true
+    file_copy_enabled         = false
+    sku                       = "Basic"
+    ip_connect_enabled        = null
+    kerberos_enabled          = null
+    scale_units               = null
+    shareable_link_enabled    = null
+    tunneling_enabled         = null
+    session_recording_enabled = null
+    virtual_network_id        = null
+    tags = {
+      environment = "dev"
+      owner       = "dev-team"
+    }
+    zones = []
+  }
+}
+# Application Gateway configuration
+app_gateways = {
+  agw1 = {
+    name                      = "shahed-agw1"
+    resource_group_name       = "shahed-dev-01"
+    location                  = "centralindia"
+    frontend_ipconfig_name    = "agw-frontend-ip"
+    backend_address_pool_name = "agw-backend-pool"
+    http_listener_name        = "agw-http-listener"
+    backend_http_settings_name = "agw-http-settings"
+    probe_name                = "agw-health-probe"
+    protocol                  = "Http"
+    frontend_port             = 8080
+    backend_port              = 80
+    sku_name                  = "Standard_v2"
+    capacity                  = 2
+    request_routing_rule_name  = "agw-routing-rule"
+  }
+}
+subnet_ids = {
+  agw1 = "/subscriptions/<sub_id>/resourceGroups/<rg_name>/providers/Microsoft.Network/virtualNetworks/<vnet_name>/subnets/appgw-subnet"
 }

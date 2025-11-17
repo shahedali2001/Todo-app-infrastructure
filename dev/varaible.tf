@@ -13,6 +13,9 @@ variable "key_vault_secret" {}
 variable "backup_policies" {}
 variable "shahed_lb" {}
 variable "shahed_lb_nics" {}
+variable "bastion_hosts" {}
+variable "app_gateways" {}
+variable "subnet_ids" {}
 # variable "public_ip_ids" {}
   
  

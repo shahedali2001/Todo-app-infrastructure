@@ -43,4 +43,6 @@ resource "azurerm_linux_virtual_machine" "vm" {
     sku       = each.value.source_image_reference.sku
     version   = each.value.source_image_reference.version
   }
+  #  Custom Data Block (for_each + filebase64)
+  custom_data = filebase64(each.value.custom_data_file)
 }
