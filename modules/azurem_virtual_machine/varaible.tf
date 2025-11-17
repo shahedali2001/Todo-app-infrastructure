@@ -13,7 +13,7 @@ variable "vms" {
       source_image_reference = map(string) 
       nsg_name = string
       nsg_key       = string 
-      custom_data_file    =  optional(string)
+      #custom_data_file    =  optional(string)
       }))
     }
   variable "nsg_ids" {
