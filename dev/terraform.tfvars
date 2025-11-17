@@ -246,8 +246,9 @@ vms = {
       sku       = "22_04-lts"
       version   = "latest"
     }
+    custom_data_file = "scripts/install-nginx.sh"
   }
-  custom_data_file = "scripts/install-nginx.sh"
+  
 }
 
 key_vaults = {
