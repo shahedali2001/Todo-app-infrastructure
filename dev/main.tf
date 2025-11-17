@@ -65,13 +65,26 @@ module "azurerm_recovery_services_vault" {
     depends_on = [ module.azurerm_resource_group,module.azurerm_key_vault]
   
 }
-module "azurerm_load_balancer" {
-  source = "../modules/azurerm_load_balancer"
-  shahed_lb = var.shahed_lb
-  shahed_lb_nic = var.shahed_lb_nics
-  nic_ids = module.azurerm_linux_virtual_machine.nic_ids
-  depends_on = [ module.azurerm_linux_virtual_machine ]
+# module "azurerm_load_balancer" {
+#   source = "../modules/azurerm_load_balancer"
+#   shahed_lb = var.shahed_lb
+#   shahed_lb_nic = var.shahed_lb_nics
+#   nic_ids = module.azurerm_linux_virtual_machine.nic_ids
+#   depends_on = [ module.azurerm_linux_virtual_machine ]
+# }
+
+module "azurerm_bastion" {
+    source = "../modules/azurerm_bastion"
+    bastion_hosts = var.bastion_hosts
+    public_ip_ids  = module.azurerm_public_ip.public_ip_ids
+    depends_on = [ module.azurerm_resource_group,module.azurerm_linux_virtual_machine ]
+  
 }
+module "azurerm_application_gateway" {
+  source = "../modules/azurerm_application_gateway"
+  app_gateways = var.app_gateways
+  public_ip_ids = module.azurerm_public_ip.public_ip_ids
+  subnet_ids    = var.subnet_ids
+  depends_on = [ module.azurerm_resource_group,module.azurerm_linux_virtual_machine ]
 
- 
-
+}
