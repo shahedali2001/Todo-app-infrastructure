@@ -117,3 +117,4 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
               environmentServiceNameAzureRM: 'shahedsvc'
               autoApprove: true
+              args: '-parallelism=10'
