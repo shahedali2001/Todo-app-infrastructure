@@ -1,7 +1,7 @@
 rgs = {
   rg1 = {
     name       = "shahed-dev-01"
-    location   = "centralindia"
+    location   = "Central India"
     managed_by = "marketing-team"
     tags = {
       owner       = "marketing-team"
@@ -11,8 +11,8 @@ rgs = {
 }
 storages = {
   storage1 = {
-    name                              = "shahedstg1995"
-    location                          = "centralindia"
+    name                              = "shahedstgdev011125"
+    location                          = "Central India"
     resource_group_name               = "shahed-dev-01"
     account_tier                      = "Standard"
     account_replication_type          = "LRS"
@@ -49,7 +49,7 @@ storages = {
 vnets = {
   dev-vnet1 = {
     vnet_name           = "shahed-vnet"
-    location            = "centralindia"
+    location            = "Central India"
     resource_group_name = "shahed-dev-01"
     address_space       = ["10.2.0.0/16"]
     dns_servers         = ["10.1.1.4"]
@@ -155,7 +155,7 @@ pips = {
   # pip1 = {
   #   name                = "frontend-dev-pip"
   #   resource_group_name = "shahed-dev-01"
-  #   location            = "centralindia"
+  #   location            = "Central India"
   #   allocation_method   = "Static"
   #   tags = {
   #     app = "frontend"
@@ -164,7 +164,7 @@ pips = {
   #   }, pip2 = {
   #   name                = "backend-dev-pip"
   #   resource_group_name = "shahed-dev-01"
-  #   location            = "centralindia"
+  #   location            = "Central India"
   #   allocation_method   = "Static"
   #   tags = {
   #     app = "backend"
@@ -174,7 +174,7 @@ pips = {
   pip3 = {
     name                = "loadbalancer-dev-pip"
     resource_group_name = "shahed-dev-01"
-    location            = "centralindia"
+    location            = "Central India"
     allocation_method   = "Static"
     tags = {
       app = "lb"
@@ -185,7 +185,7 @@ pips = {
   dev_bastion = {
     name                = "bastion-dev-pip"
     resource_group_name = "shahed-dev-01"
-    location            = "centralindia"
+    location            = "Central India"
     allocation_method   = "Static"
     tags = {
       app = "bastion"
@@ -195,7 +195,7 @@ pips = {
   agw_dev = {
     name                = "agw-dev-pip"
     resource_group_name = "shahed-dev-01"
-    location            = "centralindia"
+    location            = "Central India"
     allocation_method   = "Static"
     tags = {
       app = "appgw"
@@ -213,7 +213,7 @@ vms = {
     subnet_name          = "frontend-01-subnet"
     pip_name             = "frontend-dev-pip"
     vm_name              = "frontend-vm01"
-    size                 = "Standard_F2s_v2"
+    size                 = "Standard_D2s_v3"
     nsg_name             = "frontend-dev-nsg" # Corrected typo
     admin_username       = "adminuser"
     admin_password       = "Admin@12345678"
@@ -221,7 +221,7 @@ vms = {
     source_image_reference = {
       publisher = "Canonical"
       offer     = "0001-com-ubuntu-server-jammy"
-      sku       = "22_04-lts"
+      sku       = "22_04-lts-gen2"
       version   = "latest"
     }
     #custom_data_file = "scripts/install-nginx.sh"
@@ -235,7 +235,7 @@ vms = {
     subnet_name          = "backend-01-subnet"
     pip_name             = "backend-dev-pip"
     vm_name              = "backend-vm01"
-    size                 = "Standard_F2s_v2"
+    size                 = "Standard_D2s_v3"
     nsg_name             = "backend-dev-nsg"
     admin_username       = "adminuser"
     admin_password       = "Admin@12345678"
@@ -243,18 +243,17 @@ vms = {
     source_image_reference = {
       publisher = "Canonical"
       offer     = "0001-com-ubuntu-server-jammy"
-      sku       = "22_04-lts"
+      sku       = "22_04-lts-gen2"
       version   = "latest"
     }
-    #custom_data_file = "scripts/install-nginx.sh"
   }
-  
+  #custom_data_file = "scripts/init-script.sh"
 }
 
 key_vaults = {
   kv1 = {
-    name                        = "shahed-kv1"
-    location                    = "centralindia"
+    name                        = "shahed-kv123"
+    location                    = "Central India"
     resource_group_name         = "shahed-dev-01"
     enabled_for_disk_encryption = true
     soft_delete_retention_days  = 7
@@ -304,13 +303,13 @@ mssql_databases = {
 }
 log_analytics_workspaces = {
   backend-workspace = {
-    location            = "centralindia"
+    location            = "Central India"
     sku                 = "PerGB2018"
     retention_in_days   = 30
     resource_group_name = "shahed-dev-01"
   },
   frontend-workspace = {
-    location            = "centralindia"
+    location            = "Central India"
     sku                 = "PerGB2018"
     retention_in_days   = 60
     resource_group_name = "shahed-dev-01"
@@ -318,7 +317,7 @@ log_analytics_workspaces = {
 }
 recovery_services_vaults = {
   frontend-vault = {
-    location            = "centralindia"
+    location            = "Central India"
     resource_group_name = "shahed-dev-01"
     sku                 = "Standard"
     tags = {
@@ -330,7 +329,7 @@ recovery_services_vaults = {
     ]
   },
   backend-vault = {
-    location            = "centralindia"
+    location            = "Central India"
     resource_group_name = "shahed-dev-01"
     sku                 = "Standard"
     tags = {
@@ -384,7 +383,7 @@ shahed_lb = {
   lb1 = {
     name                      = "shahed-lb1"
     resource_group_name       = "shahed-dev-01"
-    location                  = "centralindia"
+    location                  = "Central India"
     frontend_ipconfig_name    = "PublicIPAddress1"
     backend_address_pool_name = "shahed-lb1-backendpool"
     lb_probe_name             = "shahed-Health-probe1"
@@ -420,8 +419,8 @@ bastion_hosts = {
 
     ip_configuration = {
       name                 = "bastion-ip-config-dev"
-      subnet_id            = "/subscriptions/xxxx/resourceGroups/shahed-dev-01/providers/Microsoft.Network/virtualNetworks/shahed-vnet/subnets/AzureBastionSubnet"
-      public_ip_address_id = "/subscriptions/xxxx/resourceGroups/shahed-dev-01/providers/Microsoft.Network/publicIPAddresses/bastion-dev-pip"
+      subnet_id            = "/subscriptions/711f9f70-1892-49fb-a04f-5bf2c5a89677/resourceGroups/shahed-dev-01/providers/Microsoft.Network/virtualNetworks/shahed-vnet/subnets/AzureBastionSubnet"
+      public_ip_address_id = "/subscriptions/711f9f70-1892-49fb-a04f-5bf2c5a89677/resourceGroups/shahed-dev-01/providers/Microsoft.Network/publicIPAddresses/bastion-dev-pip"
     }
 
     copy_paste_enabled        = true
@@ -441,25 +440,79 @@ bastion_hosts = {
     zones = []
   }
 }
-# Application Gateway configuration
-app_gateways = {
-  agw1 = {
-    name                      = "shahed-agw1"
-    resource_group_name       = "shahed-dev-01"
-    location                  = "centralindia"
-    frontend_ipconfig_name    = "agw-frontend-ip"
-    backend_address_pool_name = "agw-backend-pool"
-    http_listener_name        = "agw-http-listener"
-    backend_http_settings_name = "agw-http-settings"
-    probe_name                = "agw-health-probe"
-    protocol                  = "Http"
-    frontend_port             = 8080
-    backend_port              = 80
-    sku_name                  = "Standard_v2"
-    capacity                  = 2
-    request_routing_rule_name  = "agw-routing-rule"
+# root/terraform.tfvars  (ya dev.tfvars – jo bhi use kar rahe ho)
+
+application_gateways = {
+  appgw1 = {
+    name                = "shahed-appgw"
+    resource_group_name = "shahed-dev-01"
+    location            = "Central India"
+
+    virtual_network_name = "shahed-vnet"
+
+    sku = {
+      name     = "Standard_v2"
+      tier     = "Standard_v2"
+      capacity = 1
+    }
+
+    gateway_ip_configuration = {
+      name        = "appgw-ipconfig"
+      subnet_name = "appgw-subnet"
+    }
+
+    frontend_ports = [
+      {
+        name = "frontendPort1"
+        port = 80
+      }
+    ]
+
+    frontend_ip_configurations = [
+      {
+        name          = "frontendIPConfig1"
+        public_ip_key = "agw_dev"   # <- yahi key public_ip_ids map me exist honi chahiye
+      }
+    ]
+
+    backend_address_pools = [
+      { name = "backendPool1" }
+    ]
+
+    backend_http_settings = [
+      {
+        name                  = "httpSetting1"
+        cookie_based_affinity = "Disabled"
+        path                  = "/"
+        port                  = 80
+        protocol              = "Http"
+        request_timeout       = 60
+      }
+    ]
+
+    http_listeners = [
+      {
+        name                           = "httpListener1"
+        frontend_ip_configuration_name = "frontendIPConfig1"
+        frontend_port_name             = "frontendPort1"
+        protocol                       = "Http"
+      }
+    ]
+
+    request_routing_rules = [
+      {
+        name                       = "rule1"
+        priority                   = 9
+        rule_type                  = "Basic"
+        http_listener_name         = "httpListener1"
+        backend_address_pool_name  = "backendPool1"
+        backend_http_settings_name = "httpSetting1"
+      }
+    ]
+
+    tags = {
+      environment = "dev"
+      project     = "todo-infra"
+    }
   }
-}
-subnet_ids = {
-  agw1 = "/subscriptions/<sub_id>/resourceGroups/<rg_name>/providers/Microsoft.Network/virtualNetworks/<vnet_name>/subnets/appgw-subnet"
 }

@@ -80,11 +80,14 @@ module "azurerm_bastion" {
     depends_on = [ module.azurerm_resource_group,module.azurerm_linux_virtual_machine ]
   
 }
-module "azurerm_application_gateway" {
+module "application_gateway" {
   source = "../modules/azurerm_application_gateway"
-  app_gateways = var.app_gateways
-  public_ip_ids = module.azurerm_public_ip.public_ip_ids
-  subnet_ids    = var.subnet_ids
-  depends_on = [ module.azurerm_resource_group,module.azurerm_linux_virtual_machine ]
 
+  # Root var ko child module ke var se map kar rahe hain
+  application_gateways = var.application_gateways
+
+  # Public IP IDs map – keys must match frontend_ip_configurations.public_ip_key
+  public_ip_ids        = module.azurerm_public_ip.public_ip_ids
+
+  depends_on = [module.azurerm_virtual_network]
 }
