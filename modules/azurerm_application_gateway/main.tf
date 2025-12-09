@@ -1,70 +1,82 @@
-resource "azurerm_application_gateway" "app_gateways" {
-  for_each            = var.app_gateways
-  name                = each.value.name
-  location            = each.value.location
-  resource_group_name = each.value.resource_group_name
+# modules/azurerm_application_gateway/main.tf
 
+resource "azurerm_application_gateway" "agw" {
+  for_each = var.application_gateways
+
+  name                = each.value.name
+  resource_group_name = each.value.resource_group_name
+  location            = each.value.location
+
+  # Yahan nested sku object ka use ho raha hai (each.value.sku.*)
   sku {
-    name     = each.value.sku_name
-    tier     = "Standard_v2"
-    capacity = each.value.capacity
+    name     = each.value.sku.name
+    tier     = each.value.sku.tier
+    capacity = each.value.sku.capacity
   }
 
   gateway_ip_configuration {
-    name      = "appgw-ip-config"
-    subnet_id = var.subnet_ids["agw1"]  # From tfvars
+    name      = each.value.gateway_ip_configuration.name
+    subnet_id = data.azurerm_subnet.datasubnet[each.key].id
   }
 
- frontend_ip_configuration {
-  name                 = each.value.frontend_ipconfig_name
-  public_ip_address_id = var.public_ip_ids["agw_dev"]
+  # Multiple frontend ports
+  dynamic "frontend_port" {
+    for_each = each.value.frontend_ports
+    content {
+      name = frontend_port.value.name
+      port = frontend_port.value.port
+    }
+  }
+
+  # Public IP ke sath frontend IP configs – public_ip_key se var.public_ip_ids map se id nikal rahe hain
+  dynamic "frontend_ip_configuration" {
+    for_each = each.value.frontend_ip_configurations
+    content {
+      name                 = frontend_ip_configuration.value.name
+      public_ip_address_id = var.public_ip_ids[frontend_ip_configuration.value.public_ip_key]
+    }
+  }
+
+  dynamic "backend_address_pool" {
+    for_each = each.value.backend_address_pools
+    content {
+      name = backend_address_pool.value.name
+    }
+  }
+
+  dynamic "backend_http_settings" {
+    for_each = each.value.backend_http_settings
+    content {
+      name                  = backend_http_settings.value.name
+      cookie_based_affinity = backend_http_settings.value.cookie_based_affinity
+      path                  = backend_http_settings.value.path
+      port                  = backend_http_settings.value.port
+      protocol              = backend_http_settings.value.protocol
+      request_timeout       = backend_http_settings.value.request_timeout
+    }
+  }
+
+  dynamic "http_listener" {
+    for_each = each.value.http_listeners
+    content {
+      name                           = http_listener.value.name
+      frontend_ip_configuration_name = http_listener.value.frontend_ip_configuration_name
+      frontend_port_name             = http_listener.value.frontend_port_name
+      protocol                       = http_listener.value.protocol
+    }
+  }
+
+  dynamic "request_routing_rule" {
+    for_each = each.value.request_routing_rules
+    content {
+      name                       = request_routing_rule.value.name
+      priority                   = request_routing_rule.value.priority
+      rule_type                  = request_routing_rule.value.rule_type
+      http_listener_name         = request_routing_rule.value.http_listener_name
+      backend_address_pool_name  = request_routing_rule.value.backend_address_pool_name
+      backend_http_settings_name = request_routing_rule.value.backend_http_settings_name
+    }
+  }
+
+  tags = each.value.tags
 }
-
-  backend_address_pool {
-    name = each.value.backend_address_pool_name
-  }
-
-  backend_http_settings {
-    name                  = each.value.backend_http_settings_name
-    port                  = each.value.backend_port
-    protocol              = each.value.protocol
-    cookie_based_affinity = "Disabled"
-    request_timeout       = 20
-  }
-
-  frontend_port {
-    name = "frontend-port"
-    port = each.value.frontend_port
-  }
-
-  http_listener {
-    name                           = each.value.http_listener_name
-    frontend_ip_configuration_name = each.value.frontend_ipconfig_name
-    frontend_port_name             = "frontend-port"
-    protocol                       = each.value.protocol
-  }
-
-  request_routing_rule {
-    name                       = each.value.request_routing_rule_name
-    rule_type                  = "Basic"
-    http_listener_name         = each.value.http_listener_name
-    backend_address_pool_name  = each.value.backend_address_pool_name
-    backend_http_settings_name = each.value.backend_http_settings_name
-  }
-
-  probe {
-    name                = each.value.probe_name
-    protocol            = each.value.protocol
-    host                = "localhost"
-    path                = "/"
-    interval            = 30
-    timeout             = 30
-    unhealthy_threshold = 3
-  }
-
-  tags = {
-    environment = "dev"
-    app         = "appgw"
-  }
-}
-

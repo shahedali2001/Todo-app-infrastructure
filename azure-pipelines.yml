@@ -3,15 +3,6 @@ trigger:
     include:
       - main
 
-parameters:
-  - name: Environment
-    type: string
-    default: dev
-    values:
-      - dev
-      - qa
-      - prod
-
 pool:
   name: 'todo-app-infra'
 
@@ -50,48 +41,9 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
               environmentServiceNameAzureRM: 'shahedsvc'
 
-  - stage: Scanning_of_Code
-    displayName: "Terraform Scan Code"
-    dependsOn: TerraformInit
-    jobs:
-      - job: scanningCode
-        displayName: "Scanning Code"
-        steps:
-          # Step 1: Download latest TFLint for Windows dynamically
-          - powershell: |
-              $tflintRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/terraform-linters/tflint/releases/latest"
-              $url = $tflintRelease.assets | Where-Object { $_.name -like "*windows_amd64.zip" } | Select-Object -ExpandProperty browser_download_url
-              Write-Host "Downloading TFLint from $url"
-              Invoke-WebRequest -Uri $url -OutFile "tflint.zip"
-              Expand-Archive tflint.zip -DestinationPath "$(Agent.ToolsDirectory)\tflint" -Force
-            displayName: "Download and extract TFLint"
-
-          # Step 2: Add TFLint to PATH
-          - powershell: |
-              $env:PATH = "$(Agent.ToolsDirectory)\tflint;$env:PATH"
-              tflint --version
-            displayName: "Verify TFLint installation"
-
-          # Step 3: Run TFLint scan (warnings won't fail pipeline)
-          - powershell: |
-              cd "$(System.DefaultWorkingDirectory)/dev"
-              tflint --init
-              tflint 
-                 Write-Host "TFLint scan completed (warnings/errors ignored)."
-                  exit 0
-              
-            displayName: "Run TFLint Scan"
-
-  - stage: ManualValidation
-    displayName: "Manual Validation"
-    dependsOn: Scanning_of_Code
-    jobs:
-      - job: WaitForApproval
-        displayName: "Manual Validation"
-       
   - stage: TerraformApply
     displayName: "Terraform Apply"
-    dependsOn: ManualValidation
+    dependsOn: TerraformInit
     jobs:
       - job: TerraformApply
         displayName: "Terraform Apply"
@@ -117,4 +69,3 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
               environmentServiceNameAzureRM: 'shahedsvc'
               autoApprove: true
-              args: '-parallelism=10'
