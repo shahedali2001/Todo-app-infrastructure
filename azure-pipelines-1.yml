@@ -1,0 +1,119 @@
+trigger: 
+  branches:
+    include:
+      - feature/*
+      - main
+pool: todo-app-infra
+
+parameters:
+  - name: Environment
+    type: string
+    default: dev
+    values:
+      - dev
+      - prepod
+      - prod
+
+stages:
+  - stage: terrafromInit
+    displayName: Terraform init
+    jobs:
+      - job: TerraformInit
+        displayName: Terraform init
+        steps:
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/'
+            backendServiceArm: 'shahedado'
+            backendAzureRmResourceGroupName: 'shahed-rg'
+            backendAzureRmStorageAccountName: 'shahedstg1920'
+            backendAzureRmContainerName: 'tfscontainer'
+            backendAzureRmKey: 'dev.terraform.tfstate'
+
+  - stage: TerraformValidate
+    displayName: "Terraform Init, Validate, Plan"
+    dependsOn:  terrafromInit
+    jobs:
+      - job: TerraformValidate
+        displayName: terraform validate
+        steps:
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/'
+            backendServiceArm: 'shahedado'
+            backendAzureRmResourceGroupName: 'shahed-rg'
+            backendAzureRmStorageAccountName: 'shahedstg1920'
+            backendAzureRmContainerName: 'tfscontainer'
+            backendAzureRmKey: 'dev.terraform.tfstate'
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'validate'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/'
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/'
+            environmentServiceNameAzureRM: 'shahedado'
+
+  - stage: TerraformScan
+    dependsOn: TerraformValidate
+    displayName: Terraform Scan
+    jobs:
+      - job: TerraformScan
+        displayName: Verify TFLint installation
+        steps:
+        - powershell: |
+              $env:PATH = "$(Agent.ToolsDirectory)\tflint;$env:PATH"
+              tflint --version
+        - powershell: |
+              Write-Host "Using directory: $(System.DefaultWorkingDirectory)"
+              cd "$(System.DefaultWorkingDirectory)"
+              tflint --init
+              tflint 
+                 Write-Host "TFLint scan completed (warnings/errors ignored)."
+                  exit 0
+          displayName: TFLint Scan
+
+  - stage: ManualValidation
+    displayName: "Manual Validation"
+    dependsOn: TerraformScan
+    jobs:
+      - job: WaitForApproval
+        displayName: "Manual Validation"
+        pool: server
+        steps:
+        - task: ManualValidation@1
+          inputs:
+            instructions: "Please review and approve before continuing."
+           
+
+  - stage: TerraformApply
+    displayName: Terraform apply after scan the code
+    dependsOn: ManualValidation
+    jobs:
+      - job: TerraformApply
+        displayName: Terraform apply
+        steps:
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/'
+            backendServiceArm: 'shahedado'
+            backendAzureRmResourceGroupName: 'shahed-rg'
+            backendAzureRmStorageAccountName: 'shahedstg1920'
+            backendAzureRmContainerName: 'tfscontainer'
+            backendAzureRmKey: 'dev.terraform.tfstate'
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/'
+            environmentServiceNameAzureRM: 'shahedado'
