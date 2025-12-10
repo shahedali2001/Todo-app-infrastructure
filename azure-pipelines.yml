@@ -3,6 +3,19 @@ trigger:
     include:
       - main
 
+variables:
+  - group: shahed_variable
+  - name:  STORAGE_ACCOUNT_NAME
+    value: 'shahedstate'
+parameters:
+  - name: Environment
+    type: string
+    default: dev
+    values:
+      - dev
+      - prepod
+      - prod 
+
 pool:
   name: 'todo-app-infra'
 
@@ -19,9 +32,9 @@ stages:
               provider: 'azurerm'
               command: 'init'
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-              backendServiceArm: 'shahedsvc'
+              backendServiceArm: 'shahedado'
               backendAzureRmResourceGroupName: 'shahed-rg'
-              backendAzureRmStorageAccountName: 'shahedstg881'
+              backendAzureRmStorageAccountName: 'shahedstg1920'
               backendAzureRmContainerName: 'tfscontainer'
               backendAzureRmKey: 'dev.terraform.tfstate'
               ensureBackend: true
@@ -39,7 +52,7 @@ stages:
               provider: 'azurerm'
               command: 'plan'
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-              environmentServiceNameAzureRM: 'shahedsvc'
+              environmentServiceNameAzureRM: 'shahedado'
 
   - stage: TerraformApply
     displayName: "Terraform Apply"
@@ -54,9 +67,9 @@ stages:
               provider: 'azurerm'
               command: 'init'
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-              backendServiceArm: 'shahedsvc'
+              backendServiceArm: 'shahedado'
               backendAzureRmResourceGroupName: 'shahed-rg'
-              backendAzureRmStorageAccountName: 'shahedstg881'
+              backendAzureRmStorageAccountName: 'shahedstg1920'
               backendAzureRmContainerName: 'tfscontainer'
               backendAzureRmKey: 'dev.terraform.tfstate'
               ensureBackend: true
@@ -67,5 +80,5 @@ stages:
               provider: 'azurerm'
               command: 'apply'
               workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-              environmentServiceNameAzureRM: 'shahedsvc'
+              environmentServiceNameAzureRM: 'shahedado'
               autoApprove: true
