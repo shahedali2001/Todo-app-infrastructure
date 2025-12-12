@@ -1,7 +1,7 @@
 trigger: 
   branches:
     include:
-      - feature/*
+      # - feature/*
       - main
 pool: todo-app-infra
 
