@@ -27,8 +27,8 @@ stages:
             command: 'init'
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             backendServiceArm: 'shahedado'
-            backendAzureRmResourceGroupName: 'shahed-rg'
-            backendAzureRmStorageAccountName: 'shahedstg1920'
+            backendAzureRmResourceGroupName: 'libo-rg'
+            backendAzureRmStorageAccountName: 'libo4520'
             backendAzureRmContainerName: 'tfscontainer'
             backendAzureRmKey: 'dev.terraform.tfstate'
 
@@ -45,8 +45,8 @@ stages:
             command: 'init'
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             backendServiceArm: 'shahedado'
-            backendAzureRmResourceGroupName: 'shahed-rg'
-            backendAzureRmStorageAccountName: 'shahedstg1920'
+            backendAzureRmResourceGroupName: 'libo-rg'
+            backendAzureRmStorageAccountName: 'libo4520'
             backendAzureRmContainerName: 'tfscontainer'
             backendAzureRmKey: 'dev.terraform.tfstate'
 
@@ -107,8 +107,8 @@ stages:
             command: 'init'
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             backendServiceArm: 'shahedado'
-            backendAzureRmResourceGroupName: 'shahed-rg'
-            backendAzureRmStorageAccountName: 'shahedstg1920'
+            backendAzureRmResourceGroupName: 'libo-rg'
+            backendAzureRmStorageAccountName: 'libo4520'
             backendAzureRmContainerName: 'tfscontainer'
             backendAzureRmKey: 'dev.terraform.tfstate'
         - task: TerraformTask@5
