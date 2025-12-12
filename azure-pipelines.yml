@@ -30,7 +30,7 @@ stages:
             backendAzureRmResourceGroupName: 'libo-rg'
             backendAzureRmStorageAccountName: 'libo4520'
             backendAzureRmContainerName: 'tfscontainer'
-            backendAzureRmKey: 'dev.terraform.tfstate'
+            backendAzureRmKey: 'preprod.terraform.tfstate'
 
   - stage: TerraformValidate
     displayName: "Terraform Init, Validate, Plan"
@@ -48,7 +48,7 @@ stages:
             backendAzureRmResourceGroupName: 'libo-rg'
             backendAzureRmStorageAccountName: 'libo4520'
             backendAzureRmContainerName: 'tfscontainer'
-            backendAzureRmKey: 'dev.terraform.tfstate'
+            backendAzureRmKey: 'preprod.terraform.tfstate'
 
         - task: TerraformTask@5
           inputs:
@@ -110,7 +110,7 @@ stages:
             backendAzureRmResourceGroupName: 'libo-rg'
             backendAzureRmStorageAccountName: 'libo4520'
             backendAzureRmContainerName: 'tfscontainer'
-            backendAzureRmKey: 'dev.terraform.tfstate'
+            backendAzureRmKey: 'preprod.terraform.tfstate'
         - task: TerraformTask@5
           inputs:
             provider: 'azurerm'
