@@ -11,17 +11,18 @@ parameters:
     default: dev
     values:
       - dev
-      - prepod
+      - preprod
       - prod
 
 stages:
+
 # ---------------- Terraform Init ----------------
-  - stage: terrafromInit
-    displayName: Terraform init
-    jobs:
-      - job: TerraformInit
-        displayName: Terraform init
-        steps:
+- stage: TerraformInit
+  displayName: Terraform Init
+  jobs:
+    - job: TerraformInit
+      displayName: Terraform Init
+      steps:
         - task: TerraformTask@5
           inputs:
             provider: 'azurerm'
@@ -34,13 +35,14 @@ stages:
             backendAzureRmKey: 'preprod.terraform.tfstate'
 
 # ---------------- Terraform Validate & Plan ----------------
-  - stage: TerraformValidate
-    displayName: "Terraform Init, Validate, Plan"
-    dependsOn: terrafromInit
-    jobs:
-      - job: TerraformValidate
-        displayName: terraform validate
-        steps:
+- stage: TerraformValidate
+  displayName: Terraform Validate & Plan
+  dependsOn: TerraformInit
+  jobs:
+    - job: TerraformValidate
+      displayName: Terraform Validate & Plan
+      steps:
+        # INIT in new stage/agent
         - task: TerraformTask@5
           inputs:
             provider: 'azurerm'
@@ -66,38 +68,42 @@ stages:
             environmentServiceNameAzureRM: 'shahedado'
 
 # ---------------- TruffleHog Secret Scan ----------------
-  - stage: TruffleHogScan
-    displayName: "Secret Scan (TruffleHog)"
-    dependsOn: TerraformValidate
-    jobs:
-      - job: TruffleHogScan
-        displayName: TruffleHog Secret Scan
-        steps:
+- stage: TruffleHogScan
+  displayName: Secret Scan (TruffleHog)
+  dependsOn: TerraformValidate
+  jobs:
+    - job: TruffleHogScan
+      displayName: TruffleHog Secret Scan
+      pool:
+        vmImage: 'windows-latest'
+      steps:
         - checkout: self
 
-        - script: |
-            echo "Installing TruffleHog..."
-            curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh
+        # Use Python version of TruffleHog (works on Windows)
+        - powershell: |
+            python -m pip install --upgrade pip
+            pip install truffleHog
+          displayName: Install TruffleHog
 
-            echo "Running TruffleHog secret scan..."
-            trufflehog filesystem $(System.DefaultWorkingDirectory) --fail
-          displayName: Run TruffleHog Scan
+        - powershell: |
+            truffleHog filesystem $(System.DefaultWorkingDirectory) --fail
+          displayName: Run TruffleHog Secret Scan
 
 # ---------------- Terraform Lint ----------------
-  - stage: TerraformScan
-    dependsOn: TruffleHogScan
-    displayName: Terraform Scan
-    jobs:
-      - job: TerraformScan
-        displayName: TFLint Scan
-        steps:
+- stage: TerraformScan
+  dependsOn: TruffleHogScan
+  displayName: Terraform Scan
+  jobs:
+    - job: TerraformScan
+      displayName: TFLint Scan
+      steps:
         - powershell: |
               $env:PATH = "$(Agent.ToolsDirectory)\tflint;$env:PATH"
               tflint --version
 
         - powershell: |
               Write-Host "Using directory: $(System.DefaultWorkingDirectory)"
-              cd "$(System.DefaultWorkingDirectory)"
+              cd "$(System.DefaultWorkingDirectory)/dev"
               tflint --init
               tflint
               Write-Host "TFLint scan completed (warnings/errors ignored)."
@@ -105,26 +111,27 @@ stages:
           displayName: TFLint Scan
 
 # ---------------- Manual Approval ----------------
-  - stage: ManualValidation
-    displayName: "Manual Validation"
-    dependsOn: TerraformScan
-    jobs:
-      - job: WaitForApproval
-        displayName: "Manual Validation"
-        pool: server
-        steps:
+- stage: ManualValidation
+  displayName: Manual Validation
+  dependsOn: TerraformScan
+  jobs:
+    - job: WaitForApproval
+      displayName: Manual Approval
+      pool: server
+      steps:
         - task: ManualValidation@1
           inputs:
             instructions: "Please review and approve before continuing."
 
 # ---------------- Terraform Apply ----------------
-  - stage: TerraformApply
-    displayName: Terraform apply after scan the code
-    dependsOn: ManualValidation
-    jobs:
-      - job: TerraformApply
-        displayName: Terraform apply
-        steps:
+- stage: TerraformApply
+  displayName: Terraform Apply
+  dependsOn: ManualValidation
+  jobs:
+    - job: TerraformApply
+      displayName: Terraform Apply
+      steps:
+        # INIT in new stage/agent
         - task: TerraformTask@5
           inputs:
             provider: 'azurerm'
@@ -142,3 +149,4 @@ stages:
             command: 'apply'
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             environmentServiceNameAzureRM: 'shahedado'
+            additionalArgs: '-auto-approve'
