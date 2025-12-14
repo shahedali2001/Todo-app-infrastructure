@@ -3,7 +3,6 @@ trigger:
     include:
       - main
 
-# ---------------- Self-hosted Agent Pool for Terraform ----------------
 pool: todo-app-infra  # Self-hosted agent for Terraform tasks
 
 parameters:
@@ -68,48 +67,45 @@ stages:
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             environmentServiceNameAzureRM: 'shahedado'
 
-# ---------------- TruffleHog Secret Scan ----------------
-- stage: TruffleHogScan
-  displayName: Secret Scan (TruffleHog)
+# ---------------- Checkov Scan ----------------
+- stage: CheckovScan
+  displayName: Checkov Security Scan
   dependsOn: TerraformValidate
   jobs:
-    - job: TruffleHogScan
-      displayName: TruffleHog Secret Scan
-      # Use Microsoft-hosted Ubuntu agent for Python support
-      pool:
-        vmImage: 'ubuntu-latest'
+    - job: CheckovScan
+      displayName: Run Checkov Scan
+      pool: todo-app-infra
       steps:
         - checkout: self
 
-        # Install TruffleHog via Python
-        - script: |
-            python3 -m pip install --upgrade pip
-            pip3 install trufflehog
-          displayName: Install TruffleHog
+        - powershell: |
+            python -m pip install --upgrade pip
+            pip install checkov
+          displayName: Install Checkov
 
-        - script: |
-            trufflehog filesystem "$(System.DefaultWorkingDirectory)" --fail
-          displayName: Run TruffleHog Secret Scan
+        - powershell: |
+            checkov -d $(System.DefaultWorkingDirectory)/dev --quiet
+          displayName: Run Checkov Scan
 
 # ---------------- Terraform Lint ----------------
 - stage: TerraformScan
-  dependsOn: TruffleHogScan
-  displayName: Terraform Scan
+  displayName: Terraform Lint (TFLint)
+  dependsOn: CheckovScan
   jobs:
     - job: TerraformScan
       displayName: TFLint Scan
       steps:
         - powershell: |
-              $env:PATH = "$(Agent.ToolsDirectory)\tflint;$env:PATH"
-              tflint --version
+            $env:PATH = "$(Agent.ToolsDirectory)\tflint;$env:PATH"
+            tflint --version
 
         - powershell: |
-              cd "$(System.DefaultWorkingDirectory)/dev"
-              tflint --init
-              tflint
-              Write-Host "TFLint scan completed (warnings/errors ignored)."
-              exit 0
-          displayName: TFLint Scan
+            cd "$(System.DefaultWorkingDirectory)/dev"
+            tflint --init
+            tflint
+            Write-Host "TFLint scan completed (warnings/errors ignored)."
+            exit 0
+          displayName: Run TFLint Scan
 
 # ---------------- Manual Approval ----------------
 - stage: ManualValidation
