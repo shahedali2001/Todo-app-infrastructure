@@ -3,8 +3,8 @@ trigger:
     include:
       - main
 
-# ---------------- Self-hosted Agent Pool ----------------
-pool: todo-app-infra  # Make sure your self-hosted agent is in this pool
+# ---------------- Self-hosted Agent Pool for Terraform ----------------
+pool: todo-app-infra  # Self-hosted agent for Terraform tasks
 
 parameters:
   - name: Environment
@@ -75,18 +75,20 @@ stages:
   jobs:
     - job: TruffleHogScan
       displayName: TruffleHog Secret Scan
-      pool: todo-app-infra  # Self-hosted agent pool
+      # Use Microsoft-hosted Ubuntu agent for Python support
+      pool:
+        vmImage: 'ubuntu-latest'
       steps:
         - checkout: self
 
         # Install TruffleHog via Python
-        - powershell: |
-            python -m pip install --upgrade pip
-            pip install truffleHog
+        - script: |
+            python3 -m pip install --upgrade pip
+            pip3 install trufflehog
           displayName: Install TruffleHog
 
-        - powershell: |
-            truffleHog filesystem $(System.DefaultWorkingDirectory) --fail
+        - script: |
+            trufflehog filesystem "$(System.DefaultWorkingDirectory)" --fail
           displayName: Run TruffleHog Secret Scan
 
 # ---------------- Terraform Lint ----------------
