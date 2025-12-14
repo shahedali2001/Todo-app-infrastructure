@@ -3,7 +3,8 @@ trigger:
     include:
       - main
 
-pool: todo-app-infra
+# ---------------- Self-hosted Agent Pool ----------------
+pool: todo-app-infra  # Make sure your self-hosted agent is in this pool
 
 parameters:
   - name: Environment
@@ -42,7 +43,7 @@ stages:
     - job: TerraformValidate
       displayName: Terraform Validate & Plan
       steps:
-        # INIT in new stage/agent
+        # Terraform init again on this stage/agent
         - task: TerraformTask@5
           inputs:
             provider: 'azurerm'
@@ -74,12 +75,11 @@ stages:
   jobs:
     - job: TruffleHogScan
       displayName: TruffleHog Secret Scan
-      pool:
-        vmImage: 'windows-latest'
+      pool: todo-app-infra  # Self-hosted agent pool
       steps:
         - checkout: self
 
-        # Use Python version of TruffleHog (works on Windows)
+        # Install TruffleHog via Python
         - powershell: |
             python -m pip install --upgrade pip
             pip install truffleHog
@@ -102,7 +102,6 @@ stages:
               tflint --version
 
         - powershell: |
-              Write-Host "Using directory: $(System.DefaultWorkingDirectory)"
               cd "$(System.DefaultWorkingDirectory)/dev"
               tflint --init
               tflint
@@ -131,7 +130,7 @@ stages:
     - job: TerraformApply
       displayName: Terraform Apply
       steps:
-        # INIT in new stage/agent
+        # Terraform init again before apply
         - task: TerraformTask@5
           inputs:
             provider: 'azurerm'
