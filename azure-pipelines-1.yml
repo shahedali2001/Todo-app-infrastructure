@@ -1,7 +1,7 @@
-trigger: 
-  branches:
-    include:
-      - main
+trigger: none
+  # branches:
+  #   include:
+  #     - main
 
 pool: todo-app-infra  # Self-hosted agent for Terraform tasks
 
@@ -67,46 +67,53 @@ stages:
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             environmentServiceNameAzureRM: 'shahedado'
 
-# ---------------- Checkov Scan ----------------
+# ---------------- Checkov Secret/Infrastructure Scan ----------------
 - stage: CheckovScan
-  displayName: Checkov Security Scan
+  displayName: Checkov Scan
   dependsOn: TerraformValidate
+  pool: todo-app-infra  # Use self-hosted agent
   jobs:
     - job: CheckovScan
-      displayName: Run Checkov Scan
-      pool: todo-app-infra
+      displayName: Checkov Scan
       steps:
         - checkout: self
 
+        # Ensure Python is available on agent
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '3.x'
+            addToPath: true
+
+        # Install Checkov
         - powershell: |
             python -m pip install --upgrade pip
             pip install checkov
           displayName: Install Checkov
 
+        # Run Checkov scan
         - powershell: |
             checkov -d $(System.DefaultWorkingDirectory)/dev --quiet
           displayName: Run Checkov Scan
 
 # ---------------- Terraform Lint ----------------
 - stage: TerraformScan
-  displayName: Terraform Lint (TFLint)
   dependsOn: CheckovScan
+  displayName: Terraform Scan
   jobs:
     - job: TerraformScan
       displayName: TFLint Scan
       steps:
         - powershell: |
-            $env:PATH = "$(Agent.ToolsDirectory)\tflint;$env:PATH"
-            tflint --version
+              $env:PATH = "$(Agent.ToolsDirectory)\tflint;$env:PATH"
+              tflint --version
 
         - powershell: |
-            cd "$(System.DefaultWorkingDirectory)/dev"
-            tflint --init
-            tflint
-            Write-Host "TFLint scan completed (warnings/errors ignored)."
-            exit 0
-          displayName: Run TFLint Scan
-
+              cd "$(System.DefaultWorkingDirectory)/dev"
+              tflint --init
+              tflint
+              Write-Host "TFLint scan completed (warnings/errors ignored)."
+              exit 0
+          displayName: TFLint Scan
 # ---------------- Manual Approval ----------------
 - stage: ManualValidation
   displayName: Manual Validation
