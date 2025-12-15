@@ -1,18 +1,18 @@
-trigger: none
-  # branches:
-  #   include:
-  #     - main
+trigger: 
+  branches:
+    include:
+      - main
 
 pool: todo-app-infra  # Self-hosted agent for Terraform tasks
 
-parameters:
-  - name: Environment
-    type: string
-    default: dev
-    values:
-      - dev
-      - preprod
-      - prod
+# parameters:
+#   - name: Environment
+#     type: string
+#     default: dev
+#     values:
+#       - dev
+#       - preprod
+#       - prod
 
 stages:
 
