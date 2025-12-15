@@ -4,7 +4,10 @@ trigger:
       - main
 
 pool: todo-app-infra  # Self-hosted agent for Terraform tasks
-
+parameters:
+- name: MaxConcurrency
+  type: number
+  default: 1
 # parameters:
 #   - name: Environment
 #     type: string
