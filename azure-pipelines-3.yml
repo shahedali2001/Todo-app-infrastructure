@@ -3,17 +3,20 @@ trigger: none
   #   include:
   #     - main
 
-pool: todo-app-infra  # Self-hosted agent for Terraform tasks
+  # Self-hosted agent for Terraform tasks
 
-parameters:
-  - name: Environment
-    type: string
-    default: dev
-    values:
-      - dev
-      - preprod
-      - prod
-
+# parameters:
+#   - name: Environment
+#     type: string
+#     default: dev
+#     values:
+#       - dev
+#       - preprod
+#       - prod
+#   - name: MaxConcurrency
+#     type: number
+#     default: 2
+pool: todo-app-infra
 stages:
 
 # ---------------- Terraform Init ----------------
