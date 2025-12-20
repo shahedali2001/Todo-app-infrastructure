@@ -92,7 +92,7 @@ stages:
             script: |
               Write-Host "Running tflint..."
               D:\security_tools\tflint\tflint.exe `
-              "$(System.DefaultWorkingDirectory)\dev" --severity HIGH,CRITICAL
+              "$(System.DefaultWorkingDirectory)/dev" --severity HIGH,CRITICAL
 
 
   # - stage: Terratest
