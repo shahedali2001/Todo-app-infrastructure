@@ -86,13 +86,20 @@ stages:
         dependsOn: tflintScan
         steps:
         - task: PowerShell@2
-          displayName: Run tflint scan
+          displayName: Run tfsec scan (show results, ignore critical)
           inputs:
             targetType: 'inline'
             script: |
-              Write-Host "Running tfsec (soft fail)..."
+              Write-Host "Running tfsec (results will be shown, pipeline won't fail)..."
+              
+                    # Run tfsec and capture exit code
                     C:\security_tools\tfsec\tfsec.exe . --tfvars-file terraform.tfvars
-                    Write-Host "tfsec completed, ignoring exit code"
+                    $tfsecExitCode = $LASTEXITCODE
+              
+                    Write-Host "tfsec finished with exit code: $tfsecExitCode"
+                    Write-Host "Ignoring tfsec exit code to allow pipeline to continue"
+              
+                    # Always exit 0 so pipeline passes
                     exit 0
             workingDirectory: '$(System.DefaultWorkingDirectory)\dev'
 
