@@ -112,17 +112,30 @@ stages:
         displayName: Execute Terratest
         steps:
           - checkout: self
+
+        # Install & configure Go correctly
           - task: PowerShell@2
-            displayName: Install Go
+            displayName: Install Go (if missing)
             inputs:
               targetType: inline
               script: |
-                if (!(Get-Command go -ErrorAction SilentlyContinue)) {
-                   Write-Host "Installing Go..."
-                  choco install golang -y
-                  }
-                  go version
-           # Download Go Dependencies
+                if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
+                     Write-Host "Go not found, installing..."
+                     choco install golang -y
+                     refreshenv
+                } else {
+                  Write-Host "Go is already installed."
+                }
+
+        # Verify Go
+          - task: PowerShell@2
+            displayName: Verify Go
+            inputs:
+              targetType: inline
+              script: |
+                go version
+
+        # Download Go dependencies
           - task: PowerShell@2
             displayName: Go Mod Download
             inputs:
@@ -131,6 +144,8 @@ stages:
                 cd "$(System.DefaultWorkingDirectory)\tests"
                 go mod tidy
                 go mod download
+
+        # Run Terratest
           - task: PowerShell@2
             displayName: Run Terratest
             inputs:
@@ -138,12 +153,13 @@ stages:
               script: |
                 cd "$(System.DefaultWorkingDirectory)\tests"
 
-                $env:ARM_CLIENT_ID     = "$(ARM_CLIENT_ID)"
-                $env:ARM_CLIENT_SECRET = "$(ARM_CLIENT_SECRET)"
-                $env:ARM_SUBSCRIPTION_ID = "$(ARM_SUBSCRIPTION_ID)"
-                $env:ARM_TENANT_ID     = "$(ARM_TENANT_ID)"
+                $env:ARM_CLIENT_ID           = "$(ARM_CLIENT_ID)"
+                $env:ARM_CLIENT_SECRET       = "$(ARM_CLIENT_SECRET)"
+                $env:ARM_SUBSCRIPTION_ID     = "$(ARM_SUBSCRIPTION_ID)"
+                $env:ARM_TENANT_ID           = "$(ARM_TENANT_ID)"
 
                 go test -v -timeout 60m
+
           
 
   - stage: ManualValidation
