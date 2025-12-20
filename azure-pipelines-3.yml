@@ -94,7 +94,7 @@ stages:
               C:\security_tools\tfsec\tfsec.exe `
               
               tfsec.exe . --tfvars-file terraform.tfvars
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            workingDirectory: '$(System.DefaultWorkingDirectory)\dev'
 
 
   # - stage: Terratest
