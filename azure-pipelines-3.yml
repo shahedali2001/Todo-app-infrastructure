@@ -123,28 +123,27 @@ stages:
                      Write-Host "Installing Go..."
                      choco install golang -y --no-progress
                 } 
-                $goExe = "C:\Program Files\Go\bin\go.exe"
-                 # Verify Go
-                & $goExe version
-                # Set test folder path
+                $goPath = "C:\Program Files\Go\bin"
+                if ($env:Path -notlike "*$goPath*") {
+                $env:Path = "$goPath;$env:Path"
+                }
+                go version
+                   # Set test folder path
                 $testPath = "$(System.DefaultWorkingDirectory)\dev\tests"
                  if (-not (Test-Path $testPath)) {
                     Write-Host "ERROR: Tests folder not found at $testPath"
                     exit 1
                 }
                  cd $testPath
-                 if (-not (Test-Path "go.mod")) {
-                     & $goExe mod init github.com/yourorg/yourrepo/tests
-                }
-                  # Get Terratest dependencies
-                & $goExe get github.com/gruntwork-io/terratest/modules/terraform
-                & $goExe mod tidy
-                & $goExe mod download
+                   # Get Terratest dependencies
+                go mod init github.com/yourorg/yourrepo/tests
+                go get github.com/gruntwork-io/terratest/modules/terraform
+                go mod tidy
+                go mod download
                    # Set Azure environment variables
-                $env:ARM_CLIENT_ID       = "$(ARM_CLIENT_ID)"
-                $env:ARM_CLIENT_SECRET   = "$(ARM_CLIENT_SECRET)"
-                $env:ARM_SUBSCRIPTION_ID = "$(ARM_SUBSCRIPTION_ID)"
-                $env:ARM_TENANT_ID       = "$(ARM_TENANT_ID)"
+                $env:ARM_CLIENT_ID       = "$(9df1e19f-bfa3-4337-b104-8658b6fa8c2f)"
+                $env:ARM_SUBSCRIPTION_ID = "$(711f9f70-1892-49fb-a04f-5bf2c5a89677)"
+                $env:ARM_TENANT_ID       = "$(5a8c0586-de2f-4240-9026-e0039781a9ed)"
 
                 go test -v -timeout 60m
                 
