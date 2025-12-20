@@ -133,7 +133,12 @@ stages:
             inputs:
               targetType: inline
               script: |
-                cd "$(System.DefaultWorkingDirectory)\tests"
+                $testPath = "$(System.DefaultWorkingDirectory)\dev\tests"
+                if (-not (Test-Path $testPath)) {
+                Write-Host "ERROR: Tests folder not found at $testPath"
+                exit 1
+                }
+                cd $testPath
                 if (-not (Test-Path "go.mod")) {
                 go mod init github.com/yourorg/yourrepo/tests
                 }
@@ -141,13 +146,14 @@ stages:
                 go mod tidy
                 go mod download
                           # Run Terratest
-                go test -v -timeout 60m
+              
           - task: PowerShell@2
             displayName: Run Terratest
             inputs:
               targetType: inline
               script: |
-                cd "$(System.DefaultWorkingDirectory)\tests"
+                $testPath = "$(System.DefaultWorkingDirectory)\dev\tests"
+                cd $testPath
                 $env:ARM_CLIENT_ID       = "$(ARM_CLIENT_ID)"
                 $env:ARM_CLIENT_SECRET   = "$(ARM_CLIENT_SECRET)"
                 $env:ARM_SUBSCRIPTION_ID = "$(ARM_SUBSCRIPTION_ID)"
