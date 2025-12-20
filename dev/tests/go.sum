@@ -1,0 +1,2 @@
+go mod init github.com/yourorg/yourrepo/tests   # if go.mod doesn’t exist yet
+go get github.com/gruntwork-io/terratest/modules/terraform
