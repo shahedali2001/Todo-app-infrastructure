@@ -115,14 +115,13 @@ stages:
 
         # Install & configure Go correctly
           - task: PowerShell@2
-            displayName: Install Go (if missing)
+            displayName: Install Go 
             inputs:
               targetType: inline
               script: |
                 if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
-                     Write-Host "Go not found, installing..."
-                     choco install golang -y
-                     refreshenv
+                     Write-Host "Installing Go using Chocolatey..."
+                     choco install golang -y --no-progress
                 } else {
                   Write-Host "Go is already installed."
                 }
@@ -133,6 +132,10 @@ stages:
             inputs:
               targetType: inline
               script: |
+                $goPath = "C:\Program Files\Go\bin"
+                if ($env:Path -notlike "*$goPath*") {
+                $env:Path = "$goPath;$env:Path"  
+                }
                 go version
 
         # Download Go dependencies
