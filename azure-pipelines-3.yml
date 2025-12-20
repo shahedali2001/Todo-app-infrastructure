@@ -144,7 +144,7 @@ stages:
             inputs:
               targetType: inline
               script: |
-                cd "$(System.DefaultWorkingDirectory)\dev\tests"
+                cd "$(System.DefaultWorkingDirectory)/dev/tests"
                 go mod tidy
                 go mod download
 
@@ -154,7 +154,7 @@ stages:
             inputs:
               targetType: inline
               script: |
-                cd "$(System.DefaultWorkingDirectory)\dev\tests"
+                cd "$(System.DefaultWorkingDirectory)/dev/tests"
 
                 $env:ARM_CLIENT_ID           = "$(ARM_CLIENT_ID)"
                 $env:ARM_CLIENT_SECRET       = "$(ARM_CLIENT_SECRET)"
