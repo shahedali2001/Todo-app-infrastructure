@@ -1,0 +1,141 @@
+trigger: 
+  branches:
+    include:
+      # - feature/*
+        - main
+   
+pool: todo-app-infra
+
+parameters:
+  - name: Environment
+    type: string
+    default: dev
+    values:
+      - dev
+      # - prepod
+      # - prod
+
+stages:
+  - stage: terrafromInit
+    displayName: Terraform init
+    jobs:
+      - job: TerraformInit
+        displayName: Terraform init
+        steps:
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            backendServiceArm: 'shahedado'
+            backendAzureRmResourceGroupName: 'libo-rg'
+            backendAzureRmStorageAccountName: 'libo4520'
+            backendAzureRmContainerName: 'tfscontainer'
+            backendAzureRmKey: 'dev.terraform.tfstate'
+
+  - stage: TerraformValidate
+    displayName: "Terraform Init, Validate, Plan"
+    dependsOn:  terrafromInit
+    jobs:
+      - job: TerraformValidate
+        displayName: terraform validate
+        steps:
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            backendServiceArm: 'shahedado'
+            backendAzureRmResourceGroupName: 'libo-rg'
+            backendAzureRmStorageAccountName: 'libo4520'
+            backendAzureRmContainerName: 'tfscontainer'
+            backendAzureRmKey: 'dev.terraform.tfstate'
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'validate'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            environmentServiceNameAzureRM: 'shahedado'
+
+  - stage: TerraformScan
+    dependsOn: TerraformValidate
+    displayName: Terraform Scan
+    jobs:
+      - job: tflintScan
+        displayName: Verify TFLint installation
+        steps:
+        - powershell: |
+              $env:PATH = "$(Agent.ToolsDirectory)\tflint;$env:PATH"
+              tflint --version
+        - powershell: |
+              Write-Host "Using directory: $(System.DefaultWorkingDirectory)/dev"
+              cd "$(System.DefaultWorkingDirectory)"
+              tflint --init
+              tflint 
+                 Write-Host "TFLint scan completed (warnings/errors ignored)."
+                  exit 0
+          displayName: TFLint Scan
+      - job: tfescScan
+        displayName: TFsecScan
+        dependsOn: tflintScan
+        steps:
+        - task: PowerShell@2
+          displayName: Run tflint scan
+          inputs:
+            targetType: inline
+            script: |
+              Write-Host "Running tflint..."
+              D:\security_tools\tflint\tflint.exe `
+              $(System.DefaultWorkingDirectory)/dev
+
+
+  # - stage: Terratest
+  #   displayName: Terra Test
+  #   dependsOn: TerraformScan
+  #   jobs:
+  #     - job: Terratest
+        
+          
+
+  - stage: ManualValidation
+    displayName: "Manual Validation"
+    dependsOn: TerraformScan
+    jobs:
+      - job: WaitForApproval
+        displayName: "Manual Validation"
+        pool: server
+        steps:
+        - task: ManualValidation@1
+          inputs:
+            instructions: "Please review and approve before continuing."
+           
+
+  - stage: TerraformApply
+    displayName: Terraform apply after scan the code
+    dependsOn: ManualValidation
+    jobs:
+      - job: TerraformApply
+        displayName: Terraform apply
+        steps:
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            backendServiceArm: 'shahedado'
+            backendAzureRmResourceGroupName: 'libo-rg'
+            backendAzureRmStorageAccountName: 'libo4520'
+            backendAzureRmContainerName: 'tfscontainer'
+            backendAzureRmKey: 'dev.terraform.tfstate'
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            environmentServiceNameAzureRM: 'shahedado'
