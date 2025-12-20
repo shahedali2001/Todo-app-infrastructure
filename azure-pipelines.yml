@@ -2,7 +2,8 @@ trigger:
   branches:
     include:
       # - feature/*
-      - main
+        - main
+   
 pool: todo-app-infra
 
 parameters:
@@ -11,8 +12,8 @@ parameters:
     default: dev
     values:
       - dev
-      - prepod
-      - prod
+      # - prepod
+      # - prod
 
 stages:
   - stage: terrafromInit
