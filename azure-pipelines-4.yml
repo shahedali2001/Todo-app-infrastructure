@@ -106,7 +106,7 @@ stages:
 
   - stage: TerraTest
     displayName: Run Terratest
-    dependsOn: TerraformScan
+    dependsOn: TerraCost
     jobs:
       - job: RunTerraTest
         displayName: Execute Terratest
@@ -150,10 +150,42 @@ stages:
                 $env:ARM_TENANT_ID       = "$(ARM_TENANT_ID)"
 
                 go test -v -timeout 60m
+
+  - stage: TerraCost
+    displayName: Terraform Cost Estimation
+    dependsOn: TerraformScan
+    jobs:
+    - job: InfracostScan
+      displayName: Run Infracost
+      steps:
+      - checkout: self
+
+      # Install Infracost
+      - task: PowerShell@2
+        displayName: Install Infracost
+        inputs:
+          targetType: inline
+          script: |
+            if (!(Get-Command infracost -ErrorAction SilentlyContinue)) {
+              choco install infracost -y
+            }
+            infracost --version
+
+      # Run Infracost
+      - task: PowerShell@2
+        displayName: Infracost Cost Breakdown
+        env:
+          INFRACOST_API_KEY: $(INFRACOST_API_KEY)
+        inputs:
+          targetType: inline
+          script: |
+            cd "$(System.DefaultWorkingDirectory)\dev"
+            infracost breakdown --path tfplan.json --format table
+
                 
   - stage: ManualValidation
     displayName: "Manual Validation"
-    dependsOn: TerraformScan
+    dependsOn: TerraTest
     jobs:
       - job: WaitForApproval
         displayName: "Manual Validation"
