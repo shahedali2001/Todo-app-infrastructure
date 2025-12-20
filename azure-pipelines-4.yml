@@ -3,7 +3,7 @@ trigger: none
   #   include:
   #     # - feature/*
   #       - main
-   
+  
 pool: todo-app-infra
 
 parameters:
@@ -154,6 +154,8 @@ stages:
   - stage: TerraCost
     displayName: Terraform Cost Estimation
     dependsOn: TerraformScan
+    variables:
+    - group: infracost-secrets
     jobs:
     - job: InfracostScan
       displayName: Run Infracost
@@ -180,7 +182,7 @@ stages:
           targetType: inline
           script: |
             cd "$(System.DefaultWorkingDirectory)\dev"
-            infracost breakdown --path tfplan.json --format table
+            infracost breakdown --path . --format table
 
                 
   - stage: ManualValidation
