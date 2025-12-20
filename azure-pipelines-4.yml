@@ -106,7 +106,7 @@ stages:
 
   - stage: TerraTest
     displayName: Run Terratest
-    dependsOn: TerraCost
+    dependsOn: infraCost
     jobs:
       - job: RunTerraTest
         displayName: Execute Terratest
@@ -151,8 +151,8 @@ stages:
 
                 go test -v -timeout 60m
 
-  - stage: TerraCost
-    displayName: Terraform Cost Estimation
+  - stage: infraCost
+    displayName: infra Cost Estimation
     dependsOn: TerraformScan
     variables:
     - group: infracost-secrets
