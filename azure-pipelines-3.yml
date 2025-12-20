@@ -115,45 +115,32 @@ stages:
 
         # Install & configure Go correctly
           - task: PowerShell@2
-            displayName: Install Go 
+            displayName: Install Go & Run Terratest
             inputs:
               targetType: inline
               script: |
                 if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
+                     Write-Host "Installing Go..."
                      choco install golang -y --no-progress
                 } 
-                $goPath = "C:\Program Files\Go\bin"
-                if ($env:Path -notlike "*$goPath*") {
-                  $env:Path = "$goPath;$env:Path"
-                }
-                go version
-        # Verify Go
-          - task: PowerShell@2
-            displayName: Go Mod Init & Dependencies
-            inputs:
-              targetType: inline
-              script: |
+                $goExe = "C:\Program Files\Go\bin\go.exe"
+                 # Verify Go
+                & $goExe version
+                # Set test folder path
                 $testPath = "$(System.DefaultWorkingDirectory)\dev\tests"
-                if (-not (Test-Path $testPath)) {
-                Write-Host "ERROR: Tests folder not found at $testPath"
-                exit 1
+                 if (-not (Test-Path $testPath)) {
+                    Write-Host "ERROR: Tests folder not found at $testPath"
+                    exit 1
                 }
-                cd $testPath
-                if (-not (Test-Path "go.mod")) {
-                go mod init github.com/yourorg/yourrepo/tests
+                 cd $testPath
+                 if (-not (Test-Path "go.mod")) {
+                     & $goExe mod init github.com/yourorg/yourrepo/tests
                 }
-                go get github.com/gruntwork-io/terratest/modules/terraform
-                go mod tidy
-                go mod download
-                          # Run Terratest
-              
-          - task: PowerShell@2
-            displayName: Run Terratest
-            inputs:
-              targetType: inline
-              script: |
-                $testPath = "$(System.DefaultWorkingDirectory)\dev\tests"
-                cd $testPath
+                  # Get Terratest dependencies
+                & $goExe get github.com/gruntwork-io/terratest/modules/terraform
+                & $goExe mod tidy
+                & $goExe mod download
+                   # Set Azure environment variables
                 $env:ARM_CLIENT_ID       = "$(ARM_CLIENT_ID)"
                 $env:ARM_CLIENT_SECRET   = "$(ARM_CLIENT_SECRET)"
                 $env:ARM_SUBSCRIPTION_ID = "$(ARM_SUBSCRIPTION_ID)"
