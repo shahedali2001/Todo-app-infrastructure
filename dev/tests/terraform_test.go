@@ -7,7 +7,7 @@ import (
 
 func TestTerraformAzure(t *testing.T) {
   terraformOptions := &terraform.Options{
-    TerraformDir: "../dev",
+    TerraformDir: "..",
   }
 
   defer terraform.Destroy(t, terraformOptions)
