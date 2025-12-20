@@ -138,31 +138,21 @@ stages:
                 }
                 go version
 
-        # Download Go dependencies
-          - task: PowerShell@2
-            displayName: Go Mod Download
-            inputs:
-              targetType: inline
-              script: |
-                cd "$(System.DefaultWorkingDirectory)/dev/tests"
+                         # Navigate to tests directory
+                cd "$(System.DefaultWorkingDirectory)\dev\tests"
+
+                # Download Go modules
                 go mod tidy
                 go mod download
 
-        # Run Terratest
-          - task: PowerShell@2
-            displayName: Run Terratest
-            inputs:
-              targetType: inline
-              script: |
-                cd "$(System.DefaultWorkingDirectory)/dev/tests"
+                # Set Azure environment variables
+                $env:ARM_CLIENT_ID       = "$(ARM_CLIENT_ID)"
+                $env:ARM_CLIENT_SECRET   = "$(ARM_CLIENT_SECRET)"
+                $env:ARM_SUBSCRIPTION_ID = "$(ARM_SUBSCRIPTION_ID)"
+                $env:ARM_TENANT_ID       = "$(ARM_TENANT_ID)"
 
-                $env:ARM_CLIENT_ID           = "$(ARM_CLIENT_ID)"
-                $env:ARM_CLIENT_SECRET       = "$(ARM_CLIENT_SECRET)"
-                $env:ARM_SUBSCRIPTION_ID     = "$(ARM_SUBSCRIPTION_ID)"
-                $env:ARM_TENANT_ID           = "$(ARM_TENANT_ID)"
-
+                # Run Terratest
                 go test -v -timeout 60m
-
           
 
   - stage: ManualValidation
