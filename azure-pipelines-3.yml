@@ -106,7 +106,7 @@ stages:
 
   - stage: TerraTest
     displayName: Run Terratest
-    dependsOn: TerraformApply
+    dependsOn: TerraformScan
     jobs:
       - job: RunTerraTest
         displayName: Execute Terratest
