@@ -88,11 +88,13 @@ stages:
         - task: PowerShell@2
           displayName: Run tflint scan
           inputs:
-            targetType: inline
+            targetType: 'inline'
             script: |
-              Write-Host "Running tflint..."
-              C:\security_tools\tflint\tflint.exe `
-              $(System.DefaultWorkingDirectory)/dev
+              Write-Host "Running tfse..."
+              C:\security_tools\tfsec\tfsec.exe `
+              
+              tfsec.exe . --tfvars-file terraform.tfvars
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
 
 
   # - stage: Terratest
