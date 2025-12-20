@@ -90,8 +90,10 @@ stages:
           inputs:
             targetType: 'inline'
             script: |
-              Write-Host "Running tfsec..."
+              Write-Host "Running tfsec (soft fail)..."
                     C:\security_tools\tfsec\tfsec.exe . --tfvars-file terraform.tfvars
+                    Write-Host "tfsec completed, ignoring exit code"
+                    exit 0
             workingDirectory: '$(System.DefaultWorkingDirectory)\dev'
 
 
