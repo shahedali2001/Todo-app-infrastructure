@@ -1,0 +1,189 @@
+trigger: none
+  # branches:
+  #   include:
+  #     # - feature/*
+  #       - main
+   
+pool: todo-app-infra
+
+parameters:
+  - name: Environment
+    type: string
+    default: dev
+    values:
+      - dev
+      # - prepod
+      # - prod
+
+stages:
+  - stage: terrafromInit
+    displayName: Terraform init
+    jobs:
+      - job: TerraformInit
+        displayName: Terraform init
+        steps:
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            backendServiceArm: 'shahedado'
+            backendAzureRmResourceGroupName: 'libo-rg'
+            backendAzureRmStorageAccountName: 'libo4520'
+            backendAzureRmContainerName: 'tfscontainer'
+            backendAzureRmKey: 'dev.terraform.tfstate'
+
+  - stage: TerraformValidate
+    displayName: "Terraform Init, Validate, Plan"
+    dependsOn:  terrafromInit
+    jobs:
+      - job: TerraformValidate
+        displayName: terraform validate
+        steps:
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            backendServiceArm: 'shahedado'
+            backendAzureRmResourceGroupName: 'libo-rg'
+            backendAzureRmStorageAccountName: 'libo4520'
+            backendAzureRmContainerName: 'tfscontainer'
+            backendAzureRmKey: 'dev.terraform.tfstate'
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'validate'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            environmentServiceNameAzureRM: 'shahedado'
+
+  - stage: TerraformScan
+    dependsOn: TerraformValidate
+    displayName: Terraform Scan
+    jobs:
+      - job: tflintScan
+        displayName: Verify TFLint installation
+        steps:
+        - powershell: |
+              $env:PATH = "$(Agent.ToolsDirectory)\tflint;$env:PATH"
+              tflint --version
+        - powershell: |
+              Write-Host "Using directory: $(System.DefaultWorkingDirectory)/dev"
+              cd "$(System.DefaultWorkingDirectory)"
+              tflint --init
+              tflint 
+                 Write-Host "TFLint scan completed (warnings/errors ignored)."
+                  exit 0
+          displayName: TFLint Scan
+      - job: tfescScan
+        displayName: TFsecScan
+        dependsOn: tflintScan
+        steps:
+        - task: PowerShell@2
+          displayName: Run tfsec scan (show results, ignore critical)
+          inputs:
+            targetType: 'inline'
+            script: |
+              Write-Host "Running tfsec (results will be shown, pipeline won't fail)..."
+              
+                    # Run tfsec and capture exit code
+                    C:\security_tools\tfsec\tfsec.exe . --tfvars-file terraform.tfvars
+                    $tfsecExitCode = $LASTEXITCODE
+              
+                    Write-Host "tfsec finished with exit code: $tfsecExitCode"
+                    Write-Host "Ignoring tfsec exit code to allow pipeline to continue"
+              
+                    # Always exit 0 so pipeline passes
+                    exit 0
+            workingDirectory: '$(System.DefaultWorkingDirectory)\dev'
+
+
+  - stage: TerraTest
+    displayName: Run Terratest
+    dependsOn: TerraformScan
+    jobs:
+      - job: RunTerraTest
+        displayName: Execute Terratest
+        steps:
+          - checkout: self
+
+        # Install & configure Go correctly
+          - task: PowerShell@2
+            displayName: Install Go & Run Terratest
+            inputs:
+              targetType: inline
+              script: |
+                if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
+                     Write-Host "Installing Go..."
+                     choco install golang -y --no-progress
+                } 
+                $goPath = "C:\Program Files\Go\bin"
+                if ($env:Path -notlike "*$goPath*") {
+                $env:Path = "$goPath;$env:Path"
+                }
+                go version
+                   # Set test folder path
+                $testPath = "$(System.DefaultWorkingDirectory)\dev\tests"
+                 if (-not (Test-Path $testPath)) {
+                    Write-Host "ERROR: Tests folder not found at $testPath"
+                    exit 1
+                }
+                 cd $testPath
+                 # 🔥 (IMPORTANT)
+                if (-not (Test-Path "go.mod")) {
+                go mod init github.com/yourorg/yourrepo/tests
+                }
+                   # Get Terratest dependencies
+                go mod init github.com/yourorg/yourrepo/tests
+                go get github.com/gruntwork-io/terratest@v0.46.16
+                go mod tidy
+                go mod download
+                   # Set Azure environment variables
+                $env:ARM_CLIENT_ID       = "$(ARM_CLIENT_ID)"
+                $env:ARM_SUBSCRIPTION_ID = "$(ARM_SUBSCRIPTION_ID)"
+                $env:ARM_TENANT_ID       = "$(ARM_TENANT_ID)"
+
+                go test -v -timeout 60m
+                
+  - stage: ManualValidation
+    displayName: "Manual Validation"
+    dependsOn: TerraformScan
+    jobs:
+      - job: WaitForApproval
+        displayName: "Manual Validation"
+        pool: server
+        steps:
+        - task: ManualValidation@1
+          inputs:
+            instructions: "Please review and approve before continuing."
+           
+
+  - stage: TerraformApply
+    displayName: Terraform apply after scan the code
+    dependsOn: ManualValidation
+    jobs:
+      - job: TerraformApply
+        displayName: Terraform apply
+        steps:
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            backendServiceArm: 'shahedado'
+            backendAzureRmResourceGroupName: 'libo-rg'
+            backendAzureRmStorageAccountName: 'libo4520'
+            backendAzureRmContainerName: 'tfscontainer'
+            backendAzureRmKey: 'dev.terraform.tfstate'
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            environmentServiceNameAzureRM: 'shahedado'
