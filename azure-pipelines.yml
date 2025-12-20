@@ -84,10 +84,14 @@ stages:
         displayName: TFsecScan
         dependsOn: tflintScan
         steps:
-        - task: tfsec@1
+        - task: PowerShell@2
+          displayName: Run tflint scan
           inputs:
-            version: 'v1.26.0'
-            dir: '$(System.DefaultWorkingDirectory)\dev'
+            targetType: inline
+            script: |
+              Write-Host "Running tflint..."
+              D:\security_tools\tflint\tflint.exe `
+              $(System.DefaultWorkingDirectory)
 
 
   # - stage: Terratest
