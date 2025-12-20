@@ -135,9 +135,13 @@ stages:
                     exit 1
                 }
                  cd $testPath
+                 # 🔥 (IMPORTANT)
+                if (-not (Test-Path "go.mod")) {
+                go mod init github.com/yourorg/yourrepo/tests
+                }
                    # Get Terratest dependencies
                 go mod init github.com/yourorg/yourrepo/tests
-                go get github.com/gruntwork-io/terratest/modules/terraform
+                go get github.com/gruntwork-io/terratest@v0.46.16
                 go mod tidy
                 go mod download
                    # Set Azure environment variables
