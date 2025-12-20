@@ -120,41 +120,41 @@ stages:
               targetType: inline
               script: |
                 if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
-                     Write-Host "Installing Go using Chocolatey..."
                      choco install golang -y --no-progress
-                } else {
-                  Write-Host "Go is already installed."
+                } 
+                $goPath = "C:\Program Files\Go\bin"
+                if ($env:Path -notlike "*$goPath*") {
+                  $env:Path = "$goPath;$env:Path"
                 }
-
+                go version
         # Verify Go
           - task: PowerShell@2
-            displayName: Verify Go
+            displayName: Go Mod Init & Dependencies
             inputs:
               targetType: inline
               script: |
-                $goPath = "C:\Program Files\Go\bin"
-                if ($env:Path -notlike "*$goPath*") {
-                $env:Path = "$goPath;$env:Path"  
+                cd "$(System.DefaultWorkingDirectory)\tests"
+                if (-not (Test-Path "go.mod")) {
+                go mod init github.com/yourorg/yourrepo/tests
                 }
-                go version
-
-                         # Navigate to tests directory
-                cd "$(System.DefaultWorkingDirectory)\dev\tests"
-
-                # Download Go modules
+                go get github.com/gruntwork-io/terratest/modules/terraform
                 go mod tidy
                 go mod download
-
-                # Set Azure environment variables
+                          # Run Terratest
+                go test -v -timeout 60m
+          - task: PowerShell@2
+            displayName: Run Terratest
+            inputs:
+              targetType: inline
+              script: |
+                cd "$(System.DefaultWorkingDirectory)\tests"
                 $env:ARM_CLIENT_ID       = "$(ARM_CLIENT_ID)"
                 $env:ARM_CLIENT_SECRET   = "$(ARM_CLIENT_SECRET)"
                 $env:ARM_SUBSCRIPTION_ID = "$(ARM_SUBSCRIPTION_ID)"
                 $env:ARM_TENANT_ID       = "$(ARM_TENANT_ID)"
 
-                # Run Terratest
                 go test -v -timeout 60m
-          
-
+                
   - stage: ManualValidation
     displayName: "Manual Validation"
     dependsOn: TerraformScan
