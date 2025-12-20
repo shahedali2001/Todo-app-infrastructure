@@ -90,10 +90,8 @@ stages:
           inputs:
             targetType: 'inline'
             script: |
-              Write-Host "Running tfse..."
-              C:\security_tools\tfsec\tfsec.exe `
-              
-              tfsec.exe . --tfvars-file terraform.tfvars
+              Write-Host "Running tfsec..."
+                    C:\security_tools\tfsec\tfsec.exe . --tfvars-file terraform.tfvars
             workingDirectory: '$(System.DefaultWorkingDirectory)\dev'
 
 
