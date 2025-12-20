@@ -141,9 +141,9 @@ stages:
                 go mod tidy
                 go mod download
                    # Set Azure environment variables
-                $env:ARM_CLIENT_ID       = "$(9df1e19f-bfa3-4337-b104-8658b6fa8c2f)"
-                $env:ARM_SUBSCRIPTION_ID = "$(711f9f70-1892-49fb-a04f-5bf2c5a89677)"
-                $env:ARM_TENANT_ID       = "$(5a8c0586-de2f-4240-9026-e0039781a9ed)"
+                $env:ARM_CLIENT_ID       = "$(ARM_CLIENT_ID)"
+                $env:ARM_SUBSCRIPTION_ID = "$(ARM_SUBSCRIPTION_ID)"
+                $env:ARM_TENANT_ID       = "$(ARM_TENANT_ID)"
 
                 go test -v -timeout 60m
                 
