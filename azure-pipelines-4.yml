@@ -34,59 +34,65 @@ stages:
             backendAzureRmKey: 'dev.terraform.tfstate'
 
   - stage: terraformValidate
-    displayName: "Terraform Init, Validate, Plan, Cost"
-    dependsOn:  terrafromInit
+    displayName: "Terraform Init, Validate, Plan + Infracost"
+    dependsOn: terrafromInit
     variables:
     - group: infracost-secrets
-    jobs:
-      - job: TerraformValidate
-        displayName: Terraform validate, plan & infracost
-        steps:
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'init'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            backendServiceArm: 'shahedado'
-            backendAzureRmResourceGroupName: 'libo-rg'
-            backendAzureRmStorageAccountName: 'libo4520'
-            backendAzureRmContainerName: 'tfscontainer'
-            backendAzureRmKey: 'dev.terraform.tfstate'
-           # 2️⃣ Terraform VALIDATE
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'validate'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            # 3️⃣ Terraform PLAN (IMPORTANT)
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'plan'
-            workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-            environmentServiceNameAzureRM: 'shahedado'
-            commandOptions: '-out=tfplan.binary'
-            # 4️⃣ Convert PLAN → JSON (MANDATORY for Infracost)
-        - task: PowerShell@2
-          displayName: Convert plan to JSON
-          inputs:
-            targetType: inline
-            script: |
-              cd "$(System.DefaultWorkingDirectory)\dev"
-              terraform show -json tfplan.binary > tfplan.json
-              dir tfplan.json
 
-              # 5️⃣ Infracost (SIRF YAHI RUN KARNA HAI
-        - task: PowerShell@2
-          displayName: Infracost Cost Breakdown
-          env:
-            INFRACOST_API_KEY: $(INFRACOST_API_KEY)
-          inputs:
-            targetType: inline
-            script: |
-              # infracost configure set api_key $env:INFRACOST_API_KEY
-              cd "$(System.DefaultWorkingDirectory)\dev"
-              iinfracost breakdown --path . --format table
+    jobs:
+    - job: TerraformValidate
+      displayName: Terraform validate, plan & infracost
+      steps:
+
+    # 1️⃣ Terraform INIT
+      - task: TerraformTask@5
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+          backendServiceArm: 'shahedado'
+          backendAzureRmResourceGroupName: 'libo-rg'
+          backendAzureRmStorageAccountName: 'libo4520'
+          backendAzureRmContainerName: 'tfscontainer'
+          backendAzureRmKey: 'dev.terraform.tfstate'
+
+    # 2️⃣ Terraform VALIDATE
+      - task: TerraformTask@5
+        inputs:
+          provider: 'azurerm'
+          command: 'validate'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+
+      # 3️⃣ Terraform PLAN (🔥 MUST)
+      - task: TerraformTask@5
+        inputs:
+          provider: 'azurerm'
+          command: 'plan'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+          environmentServiceNameAzureRM: 'shahedado'
+          commandOptions: '-out=tfplan.binary'
+
+      # 4️⃣ Convert PLAN → JSON (🔥 MANDATORY FOR INFRACOST)
+      - task: PowerShell@2
+        displayName: Convert plan to JSON
+        inputs:
+          targetType: inline
+          script: |
+            cd "$(System.DefaultWorkingDirectory)\dev"
+            terraform show -json tfplan.binary > tfplan.json
+            dir tfplan.json
+
+      # 5️⃣ Infracost (🔥 ONLY HERE, ONLY ONCE)
+      - task: PowerShell@2
+        displayName: Infracost Cost Breakdown
+        env:
+          INFRACOST_API_KEY: $(INFRACOST_API_KEY)
+        inputs:
+          targetType: inline
+          script: |
+            cd "$(System.DefaultWorkingDirectory)\dev"
+            infracost breakdown --path tfplan.json --format table
+
 
   - stage: terraformScan
     dependsOn: terraformValidate
