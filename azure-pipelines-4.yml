@@ -34,55 +34,67 @@ stages:
             backendAzureRmKey: 'dev.terraform.tfstate'
 
   - stage: terraformValidate
-    displayName: "Terraform Init, Validate, Plan + Infracost"
-    dependsOn: terrafromInit
-    variables:
-    - group: infracost-secrets
-
+    displayName: "Terraform Init, Validate & Plan"
     jobs:
     - job: TerraformValidate
-      displayName: Terraform validate, plan & infracost
       steps:
-
-    # 1️⃣ Terraform INIT
       - task: TerraformTask@5
         inputs:
-          provider: 'azurerm'
-          command: 'init'
+          provider: azurerm
+          command: init
           workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-          backendServiceArm: 'shahedado'
-          backendAzureRmResourceGroupName: 'libo-rg'
-          backendAzureRmStorageAccountName: 'libo4520'
-          backendAzureRmContainerName: 'tfscontainer'
-          backendAzureRmKey: 'dev.terraform.tfstate'
+          backendServiceArm: shahedado
+          backendAzureRmResourceGroupName: libo-rg
+          backendAzureRmStorageAccountName: libo4520
+          backendAzureRmContainerName: tfscontainer
+          backendAzureRmKey: dev.terraform.tfstate
 
-    # 2️⃣ Terraform VALIDATE
       - task: TerraformTask@5
         inputs:
-          provider: 'azurerm'
-          command: 'validate'
+          provider: azurerm
+          command: validate
           workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
 
-      # 3️⃣ Terraform PLAN (🔥 MUST)
       - task: TerraformTask@5
         inputs:
-          provider: 'azurerm'
-          command: 'plan'
+          provider: azurerm
+          command: plan
           workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
-          environmentServiceNameAzureRM: 'shahedado'
-          # commandOptions: '-out=tfplan.binary'
+          environmentServiceNameAzureRM: shahedado
+          commandOptions: '-out=tfplan.binary'
 
-      # 4️⃣ Convert PLAN → JSON (🔥 MANDATORY FOR INFRACOST)
-      # - task: PowerShell@2
-      #   displayName: Convert plan to JSON
-      #   inputs:
-      #     targetType: inline
-      #     script: |
-      #       cd "$(System.DefaultWorkingDirectory)\dev"
-      #       terraform show -json tfplan.binary > tfplan.json
-      #       dir tfplan.json
+      - task: PowerShell@2
+        displayName: Convert plan to JSON
+        inputs:
+          targetType: inline
+          script: |
+            cd "$(System.DefaultWorkingDirectory)\dev"
+            terraform show -json tfplan.binary > tfplan.json
 
-      # 5️⃣ Infracost (🔥 ONLY HERE, ONLY ONCE)
+      # 🔥 IMPORTANT
+      - publish: '$(System.DefaultWorkingDirectory)/dev/tfplan.json'
+        artifact: tfplan
+  - stage: infraCost
+    displayName: "Infrastructure Cost Estimation"
+    dependsOn: terraformValidate
+    variables:
+      - group: infracost-secrets
+    jobs:
+    - job: InfracostScan
+      steps:
+      - download: current
+        artifact: tfplan
+
+      - task: PowerShell@2
+        displayName: Install Infracost
+        inputs:
+          targetType: inline
+          script: |
+            if (!(Get-Command infracost -ErrorAction SilentlyContinue)) {
+              choco install infracost -y
+            }
+            infracost --version
+
       - task: PowerShell@2
         displayName: Infracost Cost Breakdown
         env:
@@ -90,8 +102,10 @@ stages:
         inputs:
           targetType: inline
           script: |
-            cd "$(System.DefaultWorkingDirectory)\dev"
-            infracost breakdown --path . --format table
+            cd "$(Pipeline.Workspace)\tfplan"
+            dir
+            infracost breakdown --path tfplan.json --format table
+
              
 
   - stage: terraformScan
