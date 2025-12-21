@@ -70,17 +70,17 @@ stages:
           command: 'plan'
           workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
           environmentServiceNameAzureRM: 'shahedado'
-          commandOptions: '-out=tfplan.binary'
+          # commandOptions: '-out=tfplan.binary'
 
       # 4️⃣ Convert PLAN → JSON (🔥 MANDATORY FOR INFRACOST)
-      - task: PowerShell@2
-        displayName: Convert plan to JSON
-        inputs:
-          targetType: inline
-          script: |
-            cd "$(System.DefaultWorkingDirectory)\dev"
-            terraform show -json tfplan.binary > tfplan.json
-            dir tfplan.json
+      # - task: PowerShell@2
+      #   displayName: Convert plan to JSON
+      #   inputs:
+      #     targetType: inline
+      #     script: |
+      #       cd "$(System.DefaultWorkingDirectory)\dev"
+      #       terraform show -json tfplan.binary > tfplan.json
+      #       dir tfplan.json
 
       # 5️⃣ Infracost (🔥 ONLY HERE, ONLY ONCE)
       - task: PowerShell@2
@@ -91,9 +91,8 @@ stages:
           targetType: inline
           script: |
             cd "$(System.DefaultWorkingDirectory)\dev"
-            infracost breakdown `
-              --terraform-plan-json tfplan.json `
-              --format table
+            infracost breakdown --path . --format table
+             
 
   - stage: terraformScan
     dependsOn: terraformValidate
