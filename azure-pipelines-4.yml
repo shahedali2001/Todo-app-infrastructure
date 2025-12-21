@@ -34,11 +34,13 @@ stages:
             backendAzureRmKey: 'dev.terraform.tfstate'
 
   - stage: terraformValidate
-    displayName: "Terraform Init, Validate, Plan"
+    displayName: "Terraform Init, Validate, Plan, Cost"
     dependsOn:  terrafromInit
+    variables:
+    - group: infracost-secrets
     jobs:
       - job: TerraformValidate
-        displayName: terraform validate
+        displayName: Terraform validate, plan & infracost
         steps:
         - task: TerraformTask@5
           inputs:
@@ -50,12 +52,13 @@ stages:
             backendAzureRmStorageAccountName: 'libo4520'
             backendAzureRmContainerName: 'tfscontainer'
             backendAzureRmKey: 'dev.terraform.tfstate'
-
+           # 2️⃣ Terraform VALIDATE
         - task: TerraformTask@5
           inputs:
             provider: 'azurerm'
             command: 'validate'
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
+            # 3️⃣ Terraform PLAN (IMPORTANT)
         - task: TerraformTask@5
           inputs:
             provider: 'azurerm'
@@ -63,6 +66,7 @@ stages:
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             environmentServiceNameAzureRM: 'shahedado'
             commandOptions: '-out=tfplan.binary'
+            # 4️⃣ Convert PLAN → JSON (MANDATORY for Infracost)
         - task: PowerShell@2
           displayName: Convert plan to JSON
           inputs:
@@ -72,8 +76,20 @@ stages:
               terraform show -json tfplan.binary > tfplan.json
               dir tfplan.json
 
+              # 5️⃣ Infracost (SIRF YAHI RUN KARNA HAI
+        - task: PowerShell@2
+          displayName: Infracost Cost Breakdown
+          env:
+            INFRACOST_API_KEY: $(INFRACOST_API_KEY)
+          inputs:
+            targetType: inline
+            script: |
+              # infracost configure set api_key $env:INFRACOST_API_KEY
+              cd "$(System.DefaultWorkingDirectory)\dev"
+              infracost breakdown --path tfplan.json --format table
+
   - stage: terraformScan
-    dependsOn: infraCost
+    dependsOn: terraformValidate
     displayName: Terraform Scan
     jobs:
       - job: tflintScan
@@ -160,39 +176,39 @@ stages:
 
                 go test -v -timeout 60m
 
-  - stage: infraCost
-    displayName: infra Cost Estimation
-    dependsOn: terraformValidate
-    variables:
-    - group: infracost-secrets
-    jobs:
-    - job: InfracostScan
-      displayName: Run Infracost
-      steps:
-      - checkout: self
+  # - stage: infraCost
+  #   displayName: infra Cost Estimation
+  #   dependsOn: terraformValidate
+  #   variables:
+  #   - group: infracost-secrets
+  #   jobs:
+  #   - job: InfracostScan
+  #     displayName: Run Infracost
+  #     steps:
+  #     - checkout: self
 
-      # Install Infracost
-      - task: PowerShell@2
-        displayName: Install Infracost
-        inputs:
-          targetType: inline
-          script: |
-            if (!(Get-Command infracost -ErrorAction SilentlyContinue)) {
-              choco install infracost -y
-            }
-            infracost --version
+  #     # Install Infracost
+  #     - task: PowerShell@2
+  #       displayName: Install Infracost
+  #       inputs:
+  #         targetType: inline
+  #         script: |
+  #           if (!(Get-Command infracost -ErrorAction SilentlyContinue)) {
+  #             choco install infracost -y
+  #           }
+  #           infracost --version
 
-      # Run Infracost
-      - task: PowerShell@2
-        displayName: Infracost Cost Breakdown
-        env:
-          INFRACOST_API_KEY: $(INFRACOST_API_KEY)
-        inputs:
-          targetType: inline
-          script: |
-            infracost configure set api_key $env:INFRACOST_API_KEY
-            cd "$(System.DefaultWorkingDirectory)\dev"
-            infracost breakdown --path tfplan.json --format table
+  #     # Run Infracost
+  #     - task: PowerShell@2
+  #       displayName: Infracost Cost Breakdown
+  #       env:
+  #         INFRACOST_API_KEY: $(INFRACOST_API_KEY)
+  #       inputs:
+  #         targetType: inline
+  #         script: |
+  #           infracost configure set api_key $env:INFRACOST_API_KEY
+  #           cd "$(System.DefaultWorkingDirectory)\dev"
+  #           infracost breakdown --path tfplan.json --format table
                 
   - stage: ManualValidation
     displayName: "Manual Validation"
