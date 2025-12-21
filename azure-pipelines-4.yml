@@ -183,8 +183,7 @@ stages:
           script: |
             infracost configure set api_key $env:INFRACOST_API_KEY
             cd "$(System.DefaultWorkingDirectory)\dev"
-            infracost breakdown --path . --format table
-
+            infracost breakdown --path tfplan.json --format table
                 
   - stage: ManualValidation
     displayName: "Manual Validation"
