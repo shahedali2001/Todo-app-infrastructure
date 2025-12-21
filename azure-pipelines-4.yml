@@ -33,7 +33,7 @@ stages:
             backendAzureRmContainerName: 'tfscontainer'
             backendAzureRmKey: 'dev.terraform.tfstate'
 
-  - stage: TerraformValidate
+  - stage: terraformValidate
     displayName: "Terraform Init, Validate, Plan"
     dependsOn:  terrafromInit
     jobs:
@@ -62,9 +62,17 @@ stages:
             command: 'plan'
             workingDirectory: '$(System.DefaultWorkingDirectory)/dev'
             environmentServiceNameAzureRM: 'shahedado'
+            commandOptions: '-out=tfplan.binary'
+        - task: PowerShell@2
+          displayName: Convert plan to JSON
+          inputs:
+            targetType: inline
+            script: |
+              cd "$(System.DefaultWorkingDirectory)\dev"
+              terraform show -json tfplan.binary > tfplan.json
 
-  - stage: TerraformScan
-    dependsOn: TerraformValidate
+  - stage: terraformScan
+    dependsOn: infraCost
     displayName: Terraform Scan
     jobs:
       - job: tflintScan
@@ -106,7 +114,7 @@ stages:
 
   - stage: TerraTest
     displayName: Run Terratest
-    dependsOn: infraCost
+    dependsOn: terraformScan
     jobs:
       - job: RunTerraTest
         displayName: Execute Terratest
@@ -153,7 +161,7 @@ stages:
 
   - stage: infraCost
     displayName: infra Cost Estimation
-    dependsOn: TerraformScan
+    dependsOn: TerraformValidate
     variables:
     - group: infracost-secrets
     jobs:
