@@ -70,6 +70,7 @@ stages:
             script: |
               cd "$(System.DefaultWorkingDirectory)\dev"
               terraform show -json tfplan.binary > tfplan.json
+              dir tfplan.json
 
   - stage: terraformScan
     dependsOn: infraCost
@@ -161,7 +162,7 @@ stages:
 
   - stage: infraCost
     displayName: infra Cost Estimation
-    dependsOn: TerraformValidate
+    dependsOn: terraformValidate
     variables:
     - group: infracost-secrets
     jobs:
